@@ -43,6 +43,13 @@ Thumbs.db
 *.sqlite3
 *.db
 
+# Firebase credentials and sensitive files
+*.json
+food-delivery-app-*-firebase-adminsdk-*.json
+firebase-adminsdk-*.json
+serviceAccount.json
+google-services.json
+
 # Coverage directory
 /coverage
 
