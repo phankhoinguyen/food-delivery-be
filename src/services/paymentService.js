@@ -4,12 +4,6 @@ const paymentConfig = require('../config/paymentConfig');
 const notificationService = require('./notificationService');
 const { generatePaymentReference } = require('../utils/paymentUtils');
 
-/**
- * Payment Service
- * 
- * This service handles the integration with payment gateways
- * Currently implements MoMo and VNPay payment processing
- */
 class PaymentService {
     constructor() {
         // Initialize payment configurations
@@ -18,16 +12,11 @@ class PaymentService {
         this.defaultProvider = paymentConfig.defaultProvider;
     }
 
-    /**
-     * Process a payment
-     * @param {Object} paymentData - Payment information
-     * @returns {Promise<Object>} - Result of payment processing
-     */
     async processPayment(paymentData) {
         try {
             const { userId, orderId, amount, paymentMethod, paymentDetails } = paymentData;
 
-            console.log('Processing payment:', paymentData);
+            console.log('Processing payment for user:', userId, 'order:', orderId, 'method:', paymentMethod);
 
             // Determine which payment gateway to use
             const provider = paymentDetails.provider || this.defaultProvider;
@@ -50,87 +39,62 @@ class PaymentService {
         }
     }
 
-    /**
-     * Process payment with MoMo
-     * @param {Object} paymentData - Payment information
-     * @returns {Promise<Object>} - Result of payment processing
-     */
     async processMomoPayment(paymentData) {
-        const { userId, orderId, amount, paymentDetails } = paymentData;
+        const { amount, userId, orderId, orderInfo = `Payment for order ${orderId}` } = paymentData;
 
-        // Generate a unique order reference
-        const orderInfo = `Payment for order ${orderId}`;
-        const requestId = generatePaymentReference('MOMO');
-        const redirectUrl = paymentDetails.redirectUrl || this.momoConfig.returnUrl;
+        const requestId = `${this.momoConfig.partnerCode}-${Date.now()}`;
+        const momoOrderId = requestId; // để tránh trùng với orderId hệ thống
 
-        // Prepare request body for MoMo API
-        const requestBody = {
-            partnerCode: this.momoConfig.partnerCode,
-            accessKey: this.momoConfig.accessKey,
-            requestId: requestId,
-            amount: amount,
-            orderId: requestId,
-            orderInfo: orderInfo,
-            redirectUrl: redirectUrl,
-            ipnUrl: this.momoConfig.notifyUrl,
-            requestType: this.momoConfig.requestType,
-            extraData: Buffer.from(JSON.stringify({
-                userId: userId,
-                orderId: orderId
-            })).toString('base64')
-        };
+        const redirectUrl = this.momoConfig.returnUrl;
+        const ipnUrl = this.momoConfig.notifyUrl;
 
-        // Generate signature
-        const rawSignature = `accessKey=${requestBody.accessKey}&amount=${requestBody.amount}&extraData=${requestBody.extraData}&ipnUrl=${requestBody.ipnUrl}&orderId=${requestBody.orderId}&orderInfo=${requestBody.orderInfo}&partnerCode=${requestBody.partnerCode}&redirectUrl=${requestBody.redirectUrl}&requestId=${requestBody.requestId}&requestType=${requestBody.requestType}`;
+        const extraData = Buffer.from(JSON.stringify({ userId, orderId })).toString('base64');
+
+        const rawSignature = `accessKey=${this.momoConfig.accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${momoOrderId}&orderInfo=${orderInfo}&partnerCode=${this.momoConfig.partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=captureWallet`;
 
         const signature = crypto
             .createHmac('sha256', this.momoConfig.secretKey)
             .update(rawSignature)
             .digest('hex');
 
-        requestBody.signature = signature;
+        const body = {
+            partnerCode: this.momoConfig.partnerCode,
+            accessKey: this.momoConfig.accessKey,
+            requestId,
+            amount,
+            orderId: momoOrderId,
+            orderInfo,
+            redirectUrl,
+            ipnUrl,
+            requestType: 'captureWallet',
+            extraData,
+            lang: 'vi',
+            signature
+        };
 
         try {
-            // Make API call to MoMo
             const response = await axios.post(
-                `${this.momoConfig.apiEndpoint}/create`,
-                requestBody
+                'https://test-payment.momo.vn/v2/gateway/api/create',
+                body
             );
 
-            const { resultCode, payUrl, message } = response.data;
-
-            if (resultCode === 0) {
-                // Success - return the payment URL
-                return {
-                    success: true,
-                    transactionId: requestId,
-                    paymentUrl: payUrl,
-                    timestamp: new Date(),
-                    provider: 'momo'
-                };
-            } else {
-                // Payment creation failed
-                return {
-                    success: false,
-                    error: message || 'MoMo payment creation failed',
-                    code: resultCode
-                };
-            }
-        } catch (error) {
-            console.error('MoMo API error:', error);
+            const result = response.data;
+            console.log('MoMo payment response, orderId:', momoOrderId, 'resultCode:', result.resultCode);
             return {
-                success: false,
-                error: error.response?.data?.message || error.message,
-                code: error.response?.data?.resultCode
+                success: true,
+                qrCodeUrl: result.qrCodeUrl,
+                deeplink: result.deeplink,
+                orderId: momoOrderId,
+                requestId,
+                transactionId: result.transId || null,
+                message: result.message
             };
+        } catch (error) {
+            console.error('MoMo payment error:', error.response?.data || error.message);
+            throw new Error('MoMo payment failed');
         }
     }
 
-    /**
-     * Process payment with VNPay
-     * @param {Object} paymentData - Payment information
-     * @returns {Promise<Object>} - Result of payment processing
-     */
     async processVnpayPayment(paymentData) {
         const { userId, orderId, amount, paymentDetails } = paymentData;
 
@@ -305,16 +269,12 @@ class PaymentService {
         }
     }
 
-    /**
-     * Process refund with VNPay
-     * @param {Object} payment - Payment to refund
-     * @returns {Promise<Object>} - Result of refund processing
-     */
+
     async processVnpayRefund(payment) {
         // Note: VNPay refunds typically require manual processing through their merchant portal
         // This is a placeholder implementation
-
-        console.log(`VNPay refund requested for transaction: ${payment.transactionId}`);
+        // Đây chỉ là log thông báo
+        //console.log(`VNPay refund requested for transaction: ${payment.transactionId}`);
 
         // Send notification to user about refund request
         if (payment.userId && payment.paymentDetails && payment.paymentDetails.deviceTokens) {
@@ -375,11 +335,6 @@ class PaymentService {
         }
     }
 
-    /**
-     * Verify MoMo payment status
-     * @param {string} transactionId - Payment transaction ID
-     * @returns {Promise<Object>} - Payment status information
-     */
     async verifyMomoPayment(transactionId) {
         // Prepare request body for MoMo API
         const requestBody = {

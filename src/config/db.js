@@ -6,7 +6,7 @@ const admin = require('firebase-admin');
  */
 class DatabaseService {
     constructor() {
-        this.dbType = process.env.DB_TYPE || 'firestore';
+        this.dbType = process.env.DB_TYPE;
         this.isConnected = false;
         this.db = null;
     }
@@ -34,7 +34,7 @@ class DatabaseService {
      * Connect to MongoDB
      */
     async connectMongoDB() {
-        const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/food_delivery';
+        const mongoURI = process.env.MONGO_URI;
 
         const conn = await mongoose.connect(mongoURI, {
             useNewUrlParser: true,
@@ -46,15 +46,12 @@ class DatabaseService {
         return conn;
     }
 
-    /**
-     * Connect to Firestore
-     */
     async connectFirestore() {
         try {
             // Check if Firebase app is already initialized
             if (!admin.apps.length) {
                 // Load service account from file path
-                const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || './food-delivery-app-44c33-firebase-adminsdk-fbsvc-7e5bf20133.json';
+                const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
                 const path = require('path');
                 const fullPath = path.resolve(serviceAccountPath);
                 const serviceAccount = require(fullPath);
@@ -75,9 +72,6 @@ class DatabaseService {
         }
     }
 
-    /**
-     * Get the database instance
-     */
     getDb() {
         if (!this.isConnected) {
             throw new Error('Database not connected. Call connect() first.');
@@ -85,9 +79,6 @@ class DatabaseService {
         return this.db;
     }
 
-    /**
-     * Get the database type
-     */
     getDatabaseType() {
         return this.dbType;
     }

@@ -24,13 +24,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'API endpoint not found'
-    });
-});
+
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -52,8 +46,18 @@ async function startServer() {
         console.log('Database connected successfully');
 
         // Load routes after database connection
-        app.use('/api/payments', require('./src/routes/paymentRoutes'));
+        app.use('/api/auth', require('./src/routes/authRoutes'));
+        app.use('/api/payment', require('./src/routes/momoPaymentRoutes'));
+        app.use('/api/payment', require('./src/routes/vnpayPaymentRoutes'));
         app.use('/api/notifications', require('./src/routes/notificationRoutes'));
+        app.use('/api/orders', require('./src/routes/orderRoutes'));
+        // 404 handler
+        app.use((req, res) => {
+            res.status(404).json({
+                success: false,
+                message: 'API endpoint not found'
+            });
+        });
 
         // Then start the server
         app.listen(PORT, () => {
@@ -70,4 +74,5 @@ if (require.main === module) {
     startServer();
 }
 
+// ...existing code...
 module.exports = app; 
