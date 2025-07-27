@@ -229,7 +229,6 @@ const paymentController = {
         try {
             const { orderId, resultCode, message, transId, orderInfo, amount, extraData } = req.query;
 
-            console.log('MoMo callback received:', req.query);
 
             // Find the payment by transaction ID
             const payments = await paymentRepository.find({ transactionId: orderId });
@@ -479,7 +478,17 @@ const paymentController = {
             console.error('VNPay callback error:', error);
             return res.status(500).send('Internal server error');
         }
+    },
+
+    generateMomoAppPaymentData: async (req, res) => {
+        try {
+            const paymentData = await paymentService.generateMomoAppPaymentData(req.body);
+            res.json(paymentData);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
     }
+
 };
 
 module.exports = paymentController; 
