@@ -1,37 +1,31 @@
 const jwt = require('jsonwebtoken');
 
-/**
- * Authentication middleware
- * Verifies the JWT token in the request header
- * 
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- */
-const authMiddleware = (req, res, next) => {
+const verifyToken = (req, res, next) => {
     try {
-        // Get token from header
-        const token = req.header('Authorization')?.replace('Bearer ', '');
+        const authHeader = req.header('Authorization');
 
-        // Check if token exists
-        if (!token) {
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
                 success: false,
                 message: 'No authentication token, access denied'
             });
         }
 
-        // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
+        const token = authHeader.replace('Bearer ', '');
 
-        // Add user from payload to request object
-        req.user = decoded;
+        // 👇 Sử dụng secret từ .env hoặc mặc định
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Continue to next middleware/controller
+        // 👇 decoded cần chứa ít nhất userId
+        req.user = {
+            userId: decoded.userId,
+            username: decoded.username, // nếu bạn có thêm username/email thì gán luôn
+            role: decoded.role
+        };
+
         next();
     } catch (error) {
         console.error('Authentication error:', error);
-
         return res.status(401).json({
             success: false,
             message: 'Token is not valid',
@@ -40,4 +34,4 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
-module.exports = authMiddleware; 
+module.exports = verifyToken;
