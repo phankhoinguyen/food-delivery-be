@@ -1,7 +1,7 @@
 const PaymentService = require('../services/paymentService');
 const { paymentRepository } = require('../models/payment');
 
-const paymentService = new PaymentService();
+const paymentService = require('../services/paymentService');
 
 const vnpayPaymentController = {
     create: async (req, res) => {
@@ -94,3 +94,4 @@ const vnpayPaymentController = {
 };
 
 module.exports = vnpayPaymentController;
+// File này đã được xóa, chỉ dùng MoMo

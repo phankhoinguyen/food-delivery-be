@@ -19,3 +19,4 @@ router.post('/pay', authMiddleware, vnpayPaymentController.create);
 router.get('/callback', paymentController.handleVnpayCallback);
 
 module.exports = router;
+// File này đã được xóa, chỉ dùng MoMo

@@ -20,7 +20,7 @@ exports.login = async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid username or password' });
         }
-        const token = jwt.sign({ userId: userDoc.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+        const token = jwt.sign({ userId: userDoc.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
         res.json({ token, user: { username: user.username, role: user.role } });
     } catch (err) {
         console.log(err);

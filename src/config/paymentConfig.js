@@ -8,16 +8,7 @@ const paymentConfig = {
         notifyUrl: process.env.MOMO_NOTIFY_URL,
         language: 'vi'
     },
-    vnpay: {
-        tmnCode: process.env.VNPAY_TMN_CODE,
-        hashSecret: process.env.VNPAY_HASH_SECRET,
-        apiEndpoint: process.env.VNPAY_API_ENDPOINT,
-        returnUrl: process.env.VNPAY_RETURN_URL,
-        version: '2.1.0',
-        command: 'pay',
-        currCode: 'VND',
-        locale: 'vn'
-    },
+    // Đã xóa cấu hình vnpay, chỉ dùng momo
     // Default payment method
     defaultProvider: process.env.DEFAULT_PAYMENT_PROVIDER || 'momo'
 };

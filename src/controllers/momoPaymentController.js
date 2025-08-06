@@ -1,15 +1,15 @@
 const PaymentService = require('../services/paymentService');
 const { paymentRepository } = require('../models/payment');
 
-const paymentService = new PaymentService();
+const paymentService = require('../services/paymentService');
 
 const momoPaymentController = {
     create: async (req, res) => {
         try {
             const userId = req.user?.userId;
-            const { orderId, amount, paymentMethod, paymentDetails = {} } = req.body;
+            const { amount, paymentMethod, paymentDetails = {} } = req.body;
 
-            if (!userId || !orderId || !amount || !paymentMethod) {
+            if (!userId || !amount || !paymentMethod) {
                 return res.status(400).json({
                     success: false,
                     message: 'Missing required payment information'
@@ -18,28 +18,33 @@ const momoPaymentController = {
 
             paymentDetails.provider = 'momo';
 
-            const paymentResult = await paymentService.processPayment({
+            const paymentResult = await paymentService.processMomoPayment({
                 userId,
-                orderId,
                 amount,
                 paymentMethod,
                 paymentDetails
             });
 
             if (paymentResult.success) {
-                if (paymentResult.paymentUrl) {
-                    // Thanh toán redirect (có paymentUrl)
+                // Ưu tiên trả về các loại URL thanh toán
+                const resultData = paymentResult.data;
+                if (resultData.redirectUrl || resultData.deepLink || resultData.smartUrl || resultData.qrCodeUrl) {
+                    const paymentDetailsData = {
+                        ...paymentDetails,
+                        provider: resultData.provider || 'momo',
+                        deepLink: resultData.deepLink || null,
+                        smartUrl: resultData.smartUrl || null,
+                        qrCodeUrl: resultData.qrCodeUrl || null,
+                        requestId: resultData.requestId || null,
+                        transactionId: resultData.transactionId || null
+                    };
+
                     const paymentData = {
                         userId,
-                        orderId,
                         amount,
                         paymentMethod,
                         paymentStatus: 'pending',
-                        paymentDetails: {
-                            ...paymentDetails,
-                            provider: paymentResult.provider,
-                            paymentUrl: paymentResult.paymentUrl
-                        }
+                        paymentDetails: paymentDetailsData
                     };
 
                     const pendingPayment = await paymentRepository.create(paymentData);
@@ -49,16 +54,19 @@ const momoPaymentController = {
                         message: 'MoMo payment initiated',
                         data: {
                             paymentId: pendingPayment.id || pendingPayment._id,
-                            paymentUrl: paymentResult.paymentUrl,
+                            provider: resultData.provider || 'momo',
                             status: 'pending',
-                            provider: paymentResult.provider
+                            requestId: resultData.requestId || null,
+                            transactionId: resultData.transactionId || null,
+                            deepLink: resultData.deepLink || null,
+                            qrCodeUrl: resultData.qrCodeUrl || null,
+                            smartUrl: resultData.smartUrl || null
                         }
                     });
                 } else {
-                    // Thanh toán app-in-app (không có paymentUrl)
+                    // Không có URL thanh toán => app-in-app hoặc xử lý xong luôn
                     const paymentData = {
                         userId,
-                        orderId,
                         amount,
                         paymentMethod,
                         paymentStatus: 'completed',
@@ -82,9 +90,9 @@ const momoPaymentController = {
                     });
                 }
             } else {
+                // Giao dịch thất bại
                 await paymentRepository.create({
                     userId,
-                    orderId,
                     amount,
                     paymentMethod,
                     paymentStatus: 'failed',
@@ -106,5 +114,4 @@ const momoPaymentController = {
         }
     }
 };
-
 module.exports = momoPaymentController;

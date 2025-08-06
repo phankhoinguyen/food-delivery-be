@@ -6,7 +6,7 @@ const { connectDB } = require('./src/config/db');
 
 // Load environment variables
 dotenv.config();
-
+require('./src/config/firebase');
 // Initialize Express app
 const app = express();
 
@@ -48,7 +48,6 @@ async function startServer() {
         // Load routes after database connection
         app.use('/api/auth', require('./src/routes/authRoutes'));
         app.use('/api/payment', require('./src/routes/momoPaymentRoutes'));
-        app.use('/api/payment', require('./src/routes/vnpayPaymentRoutes'));
         app.use('/api/notifications', require('./src/routes/notificationRoutes'));
         app.use('/api/orders', require('./src/routes/orderRoutes'));
         // 404 handler

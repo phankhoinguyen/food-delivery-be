@@ -38,28 +38,7 @@ const isValidVNDAmount = (amount) => {
 };
 
 /**
- * Generate a unique payment reference for VNPay/MomoPay
- * @param {string} provider - Payment provider ('vnpay' or 'momo')
- * @param {string} prefix - Prefix for the reference (default: 'PAY')
- * @returns {string} Unique payment reference
- */
-const generatePaymentReference = (provider = 'vnpay', prefix = 'PAY') => {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    const providerPrefix = provider.toUpperCase();
-    return `${providerPrefix}_${prefix}_${timestamp}_${random}`;
-};
 
-/**
- * Generate VNPay transaction reference
- * @param {string} tmnCode - VNPay terminal code
- * @returns {string} VNPay transaction reference
- */
-const generateVNPayTxnRef = (tmnCode) => {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-    return `${tmnCode}${timestamp}${random}`;
-};
 
 /**
  * Generate MomoPay order ID
@@ -97,11 +76,6 @@ const isValidVietnamesePhone = (phoneNumber) => {
  */
 const getPaymentMethodType = (provider, method) => {
     const methodMap = {
-        vnpay: {
-            wallet: 'VNPAYQR',
-            bank: 'VNBANK',
-            card: 'INTCARD'
-        },
         momo: {
             wallet: 'payWithMoMo',
             bank: 'payWithATM',
@@ -109,7 +83,7 @@ const getPaymentMethodType = (provider, method) => {
         }
     };
 
-    return methodMap[provider]?.[method] || 'VNPAYQR';
+    return methodMap[provider]?.[method] || 'payWithMoMo';
 };
 
 /**
@@ -145,27 +119,12 @@ const maskSensitiveData = (paymentData) => {
         }
     }
 
-    // Mask app transaction refs
-    if (maskedData.vnpTxnRef) {
-        const refLength = maskedData.vnpTxnRef.length;
-        if (refLength > 8) {
-            maskedData.vnpTxnRef = `${maskedData.vnpTxnRef.slice(0, 4)}...${maskedData.vnpTxnRef.slice(-4)}`;
-        }
-    }
+
 
     return maskedData;
 };
 
-/**
- * Create VNPay secure hash
- * @param {string} data - Data string to create hash for
- * @param {string} secretKey - Secret key
- * @returns {string} SHA256 hash
- */
-const createVNPaySecureHash = (data, secretKey) => {
-    const crypto = require('crypto');
-    return crypto.createHmac('sha512', secretKey).update(data).digest('hex');
-};
+
 
 /**
  * Create MomoPay signature
@@ -178,24 +137,7 @@ const createMomoSignature = (data, secretKey) => {
     return crypto.createHmac('sha256', secretKey).update(data).digest('hex');
 };
 
-/**
- * Validate VNPay callback secure hash
- * @param {Object} callbackData - Callback data from VNPay
- * @param {string} secretKey - Secret key
- * @returns {boolean} Is valid secure hash
- */
-const validateVNPayCallback = (callbackData, secretKey) => {
-    const { vnp_SecureHash, ...dataToVerify } = callbackData;
 
-    // Sort parameters and create query string
-    const sortedKeys = Object.keys(dataToVerify).sort();
-    const hashData = sortedKeys
-        .map(key => `${key}=${dataToVerify[key]}`)
-        .join('&');
-
-    const expectedHash = createVNPaySecureHash(hashData, secretKey);
-    return vnp_SecureHash === expectedHash;
-};
 
 /**
  * Validate MomoPay callback signature
@@ -218,14 +160,10 @@ module.exports = {
     formatAmount,
     amountToVND,
     isValidVNDAmount,
-    generatePaymentReference,
-    generateVNPayTxnRef,
     generateMomoOrderId,
     isValidVietnamesePhone,
     getPaymentMethodType,
     maskSensitiveData,
-    createVNPaySecureHash,
     createMomoSignature,
-    validateVNPayCallback,
     validateMomoCallback
-}; 
+};
