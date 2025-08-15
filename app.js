@@ -6,7 +6,7 @@ const { connectDB } = require('./src/config/db');
 
 // Load environment variables
 dotenv.config();
-require('./src/config/firebase');
+const firebaseConfig = require('./src/config/firebase');
 // Initialize Express app
 const app = express();
 
@@ -41,7 +41,11 @@ const PORT = process.env.PORT || 5000;
 
 async function startServer() {
     try {
-        // Connect to database first
+        // Initialize Firebase first
+        await firebaseConfig.initialize();
+        console.log('Firebase initialized successfully');
+
+        // Connect to database
         await connectDB();
         console.log('Database connected successfully');
 
@@ -74,4 +78,4 @@ if (require.main === module) {
 }
 
 // ...existing code...
-module.exports = app; 
+module.exports = app;

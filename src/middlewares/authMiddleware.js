@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
+const firebaseConfig = require('../config/firebase');
 
-const verifyToken = (req, res, next) => {
+const verifyFirebaseToken = async (req, res, next) => {
     try {
         const authHeader = req.header('Authorization');
 
@@ -11,27 +11,30 @@ const verifyToken = (req, res, next) => {
             });
         }
 
-        const token = authHeader.replace('Bearer ', '');
+        const idToken = authHeader.replace('Bearer ', '').trim();
 
-        // 👇 Sử dụng secret từ .env hoặc mặc định
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (!firebaseConfig || !firebaseConfig.getAuth) {
+            throw new Error('Firebase not initialized');
+        }
 
-        // 👇 decoded cần chứa ít nhất userId
+        // ✅ Xác thực token bằng Firebase Admin
+        const decodedToken = await firebaseConfig.getAuth().verifyIdToken(idToken);
+
         req.user = {
-            userId: decoded.userId,
-            username: decoded.username, // nếu bạn có thêm username/email thì gán luôn
-            role: decoded.role
+            uid: decodedToken.uid,
+            email: decodedToken.email,
+            role: decodedToken.role || 'user'
         };
 
         next();
     } catch (error) {
-        console.error('Authentication error:', error);
+        console.error('Authentication error:', error.code || '', error.message);
         return res.status(401).json({
             success: false,
-            message: 'Token is not valid',
+            message: 'Invalid Firebase token',
             error: error.message
         });
     }
 };
 
-module.exports = verifyToken;
+module.exports = verifyFirebaseToken;

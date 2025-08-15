@@ -1,52 +1,36 @@
-const User = require('../models/user');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+// src/controllers/authController.js
+const firebaseConfig = require('../config/firebase');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
-
-const { databaseService } = require('../config/db');
-
-exports.login = async (req, res) => {
-    const { username, password } = req.body;
+// ✅ Lấy thông tin user từ Firebase token
+exports.getProfile = async (req, res) => {
     try {
-        const db = databaseService.getDb();
-        const userQuery = await db.collection('users').where('username', '==', username).get();
-        if (userQuery.empty) {
-            return res.status(401).json({ message: 'Invalid username or password' });
-        }
-        const userDoc = userQuery.docs[0];
-        const user = userDoc.data();
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid username or password' });
-        }
-        const token = jwt.sign({ userId: userDoc.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { username: user.username, role: user.role } });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Server error' });
+        // req.user đã được set ở middleware verifyFirebaseToken
+        res.status(200).json({
+            success: true,
+            user: req.user
+        });
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message
+        });
     }
 };
 
-// Optional: Register API for testing
+// ❌ Không xử lý login ở server nữa (sẽ login từ client)
+exports.login = async (req, res) => {
+    return res.status(400).json({
+        success: false,
+        message: "Login phải thực hiện ở client qua Firebase Auth. Server chỉ xác thực token."
+    });
+};
+
+// ❌ Không xử lý register ở server nữa (sẽ register từ client)
 exports.register = async (req, res) => {
-    const { username, password } = req.body;
-    try {
-        const db = databaseService.getDb();
-        const userQuery = await db.collection('users').where('username', '==', username).get();
-        if (!userQuery.empty) {
-            return res.status(400).json({ message: 'Username already exists' });
-        }
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = {
-            username,
-            password: hashedPassword,
-            role: 'user'
-        };
-        const userRef = await db.collection('users').add(newUser);
-        res.status(201).json({ message: 'User registered successfully', userId: userRef.id });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ message: 'Server error' });
-    }
+    return res.status(400).json({
+        success: false,
+        message: "Register phải thực hiện ở client qua Firebase Auth."
+    });
 };

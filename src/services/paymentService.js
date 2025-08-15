@@ -2,115 +2,33 @@ const crypto = require('crypto');
 const axios = require('axios');
 const paymentConfig = require('../config/paymentConfig');
 const notificationService = require('./notificationService');
-const { generateMomoOrderId } = require('../utils/paymentUtils');
-const admin = require('../config/firebase');
+const { paymentRepository } = require('../models/payment'); // ✅ thêm dòng này
 
-class PaymentService {
-    async processMomoNotify(notifyData) {
-        const { orderId, resultCode, transId, message, userId, amount } = notifyData;
-        console.log('[MoMo Notify] Dữ liệu nhận được:', notifyData);
-        try {
-            const orderRef = admin.firestore().collection('orders').doc(orderId);
-            const orderSnap = await orderRef.get();
-
-            let updateData;
-            let notifyMsg;
-            if (parseInt(resultCode) === 0) {
-                updateData = {
-                    status: 'completed',
-                    paidAt: new Date(),
-                    transId: transId,
-                    paymentProvider: 'momo'
-                };
-                notifyMsg = `Đơn hàng ${orderId} đã thanh toán thành công qua MoMo.`;
-            } else {
-                updateData = {
-                    status: 'failed',
-                    paymentProvider: 'momo',
-                    errorMessage: message
-                };
-                notifyMsg = `Đơn hàng ${orderId} thanh toán thất bại qua MoMo: ${message}`;
-            }
-
-            if (!orderSnap.exists) {
-                // Nếu chưa có document, tạo mới
-                await orderRef.set({
-                    orderId,
-                    userId: userId || null,
-                    amount: amount || null,
-                    ...updateData,
-                    createdAt: new Date()
-                });
-                console.log(`[MoMo Notify] Đã tạo mới đơn hàng ${orderId} với trạng thái ${updateData.status}`);
-            } else {
-                await orderRef.update(updateData);
-                console.log(`[MoMo Notify] Đã cập nhật đơn hàng ${orderId} với trạng thái ${updateData.status}`);
-            }
-
-            return { success: true, userId: userId || null, message: notifyMsg };
-        } catch (error) {
-            console.error(`[MoMo Notify] Lỗi xử lý đơn hàng ${orderId}:`, error);
-            return { success: false, message: 'Lỗi xử lý notify MoMo' };
+// Hàm sanitize dữ liệu trước khi lưu Firestore
+function sanitizeData(obj) {
+    const result = {};
+    for (const key in obj) {
+        const value = obj[key];
+        if (value === undefined) {
+            result[key] = null;
+        } else if (typeof value === 'object' && value !== null) {
+            result[key] = sanitizeData(value); // xử lý object lồng nhau
+        } else {
+            result[key] = value;
         }
     }
+    return result;
+}
+
+class PaymentService {
     constructor() {
         this.momoConfig = paymentConfig.momo;
         this.defaultProvider = paymentConfig.defaultProvider;
     }
-    async handleMomoIPN(ipnData) {
-        const { orderId, resultCode, transId, message, userId, amount } = ipnData;
-        console.log('[MoMo IPN] Dữ liệu nhận được:', ipnData);
-        try {
-            // Kết nối Firestore
-            const orderRef = admin.firestore().collection('orders').doc(orderId);
-            const orderSnap = await orderRef.get();
 
-            if (!orderSnap.exists) {
-                // Nếu chưa có document, tạo mới
-
-                const newOrder = {
-                    orderId,
-                    userId: userId || null,
-                    amount: amount || null,
-                    paymentProvider: 'momo',
-                    status: parseInt(resultCode) === 0 ? 'completed' : 'failed',
-                    paidAt: parseInt(resultCode) === 0 ? new Date() : null,
-                    transId: transId || null,
-                    errorMessage: parseInt(resultCode) === 0 ? null : message,
-                    createdAt: new Date()
-                };
-                await orderRef.set(newOrder);
-                console.log(`[MoMo IPN] Đã tạo mới đơn hàng ${orderId} với trạng thái ${newOrder.status}`);
-            } else {
-                // Nếu đã có document, update như cũ
-                if (parseInt(resultCode) === 0) {
-                    await orderRef.update({
-                        status: 'completed',
-                        paidAt: new Date(),
-                        transId: transId,
-                        paymentProvider: 'momo'
-                    });
-                    console.log(`[MoMo IPN] Đơn hàng ${orderId} đã cập nhật trạng thái completed.`);
-                } else {
-                    await orderRef.update({
-                        status: 'failed',
-                        paymentProvider: 'momo',
-                        errorMessage: message
-                    });
-                    console.log(`[MoMo IPN] Đơn hàng ${orderId} cập nhật trạng thái failed - Lý do: ${message}`);
-                }
-            }
-        } catch (error) {
-            console.error(`[MoMo IPN] Lỗi cập nhật/tạo đơn hàng ${orderId}:`, error);
-            throw error;
-        }
-    }
     async processMomoPayment({ userId, amount, paymentMethod, paymentDetails }) {
-        console.log('[MoMo] Dữ liệu đầu vào:', { userId, amount, paymentMethod, paymentDetails });
-
-        const orderId = paymentDetails.orderId || crypto.randomUUID(); // ✅ Tạo orderId nếu không có
+        const orderId = paymentDetails.orderId || crypto.randomUUID();
         const requestId = crypto.randomUUID();
-
         const { partnerCode, accessKey, secretKey, apiEndpoint, returnUrl, notifyUrl } = this.momoConfig;
 
         const orderInfo = 'Thanh toán đơn hàng qua MoMo';
@@ -118,7 +36,6 @@ class PaymentService {
         const requestType = 'captureWallet';
 
         const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${notifyUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${returnUrl}&requestId=${requestId}&requestType=${requestType}`;
-
         const signature = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex');
 
         const requestBody = {
@@ -135,16 +52,18 @@ class PaymentService {
             signature,
             lang: 'vi'
         };
-        console.log('[MoMo] Request gửi đi:', requestBody);
 
         try {
             const momoRes = await axios.post(apiEndpoint, requestBody);
-            console.log('[MoMo] Response trả về:', momoRes.data);
 
             if (momoRes.data.resultCode === 0) {
-                return {
-                    success: true,
-                    data: {
+                const pendingPaymentData = {
+                    userId,
+                    orderId,
+                    amount,
+                    paymentMethod,
+                    paymentStatus: 'pending',
+                    paymentDetails: {
                         provider: 'momo',
                         requestId,
                         transactionId: momoRes.data.transId || null,
@@ -154,22 +73,46 @@ class PaymentService {
                         smartUrl: momoRes.data.smartUrl || null
                     }
                 };
+
+                // sanitize dữ liệu trước khi lưu
+                const sanitizedData = sanitizeData(pendingPaymentData);
+                console.log('Dữ liệu gửi Firestore:', sanitizedData);
+
+                await paymentRepository.create(sanitizedData); // lưu DB
+                return { success: true, data: sanitizedData.paymentDetails };
             } else {
-                console.error('[MoMo] Lỗi trả về:', momoRes.data);
-                return {
-                    success: false,
-                    error: momoRes.data
-                };
+                return { success: false, error: momoRes.data };
             }
         } catch (error) {
-            console.error('[MoMo] Lỗi gửi request:', error);
-            return {
-                success: false,
-                error: error.message
-            };
+            return { success: false, error: error.message };
         }
+    }
+
+    async processMomoNotify(notifyData) {
+        const { orderId, resultCode, transId, message, userId, amount } = notifyData;
+
+        const payment = await paymentRepository.findOneByOrderId(orderId);
+
+        const newData = sanitizeData({
+            userId,
+            orderId,
+            amount,
+            paymentMethod: 'momo',
+            paymentStatus: parseInt(resultCode) === 0 ? 'completed' : 'failed',
+            transactionId: transId,
+            paidAt: parseInt(resultCode) === 0 ? new Date() : null,
+            errorMessage: parseInt(resultCode) !== 0 ? message : null,
+            paymentDetails: notifyData
+        });
+
+        if (!payment) {
+            await paymentRepository.create(newData);
+        } else {
+            await paymentRepository.updatePayment(payment._id, newData);
+        }
+
+        return { success: true, message: 'Notify processed' };
     }
 }
 
-const paymentServiceInstance = new PaymentService();
-module.exports = paymentServiceInstance;
+module.exports = new PaymentService();
