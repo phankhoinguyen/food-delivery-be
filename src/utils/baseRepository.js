@@ -76,6 +76,7 @@ class BaseRepository {
             if (this.dbType === 'mongodb') {
                 return await this.model.findOne(query);
             } else {
+                console.log('order id query :', query);
                 let firestoreQuery = this.db.collection(this.collectionName);
                 Object.entries(query).forEach(([field, value]) => {
                     firestoreQuery = firestoreQuery.where(field, '==', value);

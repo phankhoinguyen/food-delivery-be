@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const paymentConfig = require('../config/paymentConfig');
 const notificationService = require('./notificationService');
-const { paymentRepository } = require('../models/payment'); // ✅ thêm dòng này
+const { paymentRepository } = require('../models/payment');
 
 // Hàm sanitize dữ liệu trước khi lưu Firestore
 function sanitizeData(obj) {
@@ -52,7 +52,7 @@ class PaymentService {
             signature,
             lang: 'vi'
         };
-
+        console.log('Request : ', requestBody)
         try {
             const momoRes = await axios.post(apiEndpoint, requestBody);
 
@@ -66,7 +66,6 @@ class PaymentService {
                     paymentDetails: {
                         provider: 'momo',
                         requestId,
-                        transactionId: momoRes.data.transId || null,
                         redirectUrl: momoRes.data.payUrl || null,
                         deepLink: momoRes.data.deeplink || null,
                         qrCodeUrl: momoRes.data.qrCodeUrl || null,
@@ -91,25 +90,12 @@ class PaymentService {
     async processMomoNotify(notifyData) {
         const { orderId, resultCode, transId, message, userId, amount } = notifyData;
 
+        console.log('data :', notifyData);
         const payment = await paymentRepository.findOneByOrderId(orderId);
 
-        const newData = sanitizeData({
-            userId,
-            orderId,
-            amount,
-            paymentMethod: 'momo',
-            paymentStatus: parseInt(resultCode) === 0 ? 'completed' : 'failed',
-            transactionId: transId,
-            paidAt: parseInt(resultCode) === 0 ? new Date() : null,
-            errorMessage: parseInt(resultCode) !== 0 ? message : null,
-            paymentDetails: notifyData
-        });
-
-        if (!payment) {
-            await paymentRepository.create(newData);
-        } else {
-            await paymentRepository.updatePayment(payment._id, newData);
-        }
+        // Only update status
+        const paymentId = payment.id || payment._id;
+        await paymentRepository.updateStatus(paymentId, parseInt(resultCode) === 0 ? 'completed' : 'failed');
 
         return { success: true, message: 'Notify processed' };
     }
