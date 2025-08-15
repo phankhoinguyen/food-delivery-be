@@ -1,43 +1,40 @@
-const jwt = require('jsonwebtoken');
+const firebaseConfig = require('../config/firebase');
 
-/**
- * Authentication middleware
- * Verifies the JWT token in the request header
- * 
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next middleware function
- */
-const authMiddleware = (req, res, next) => {
+const verifyFirebaseToken = async (req, res, next) => {
     try {
-        // Get token from header
-        const token = req.header('Authorization')?.replace('Bearer ', '');
+        const authHeader = req.header('Authorization');
 
-        // Check if token exists
-        if (!token) {
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({
                 success: false,
                 message: 'No authentication token, access denied'
             });
         }
 
-        // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
+        const idToken = authHeader.replace('Bearer ', '').trim();
 
-        // Add user from payload to request object
-        req.user = decoded;
+        if (!firebaseConfig || !firebaseConfig.getAuth) {
+            throw new Error('Firebase not initialized');
+        }
 
-        // Continue to next middleware/controller
+        // ✅ Xác thực token bằng Firebase Admin
+        const decodedToken = await firebaseConfig.getAuth().verifyIdToken(idToken);
+
+        req.user = {
+            uid: decodedToken.uid,
+            email: decodedToken.email,
+            role: decodedToken.role || 'user'
+        };
+
         next();
     } catch (error) {
-        console.error('Authentication error:', error);
-
+        console.error('Authentication error:', error.code || '', error.message);
         return res.status(401).json({
             success: false,
-            message: 'Token is not valid',
+            message: 'Invalid Firebase token',
             error: error.message
         });
     }
 };
 
-module.exports = authMiddleware; 
+module.exports = verifyFirebaseToken;

@@ -6,7 +6,7 @@ const { connectDB } = require('./src/config/db');
 
 // Load environment variables
 dotenv.config();
-
+const firebaseConfig = require('./src/config/firebase');
 // Initialize Express app
 const app = express();
 
@@ -24,13 +24,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'API endpoint not found'
-    });
-});
+
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -47,13 +41,26 @@ const PORT = process.env.PORT || 5000;
 
 async function startServer() {
     try {
-        // Connect to database first
+        // Initialize Firebase first
+        await firebaseConfig.initialize();
+        console.log('Firebase initialized successfully');
+
+        // Connect to database
         await connectDB();
         console.log('Database connected successfully');
 
         // Load routes after database connection
-        app.use('/api/payments', require('./src/routes/paymentRoutes'));
+        app.use('/api/auth', require('./src/routes/authRoutes'));
+        app.use('/api/payment', require('./src/routes/momoPaymentRoutes'));
         app.use('/api/notifications', require('./src/routes/notificationRoutes'));
+        app.use('/api/orders', require('./src/routes/orderRoutes'));
+        // 404 handler
+        app.use((req, res) => {
+            res.status(404).json({
+                success: false,
+                message: 'API endpoint not found'
+            });
+        });
 
         // Then start the server
         app.listen(PORT, () => {
@@ -70,4 +77,5 @@ if (require.main === module) {
     startServer();
 }
 
-module.exports = app; 
+// ...existing code...
+module.exports = app;

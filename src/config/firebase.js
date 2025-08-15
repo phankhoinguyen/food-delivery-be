@@ -1,5 +1,5 @@
+require('dotenv').config();
 const admin = require('firebase-admin');
-const path = require('path');
 
 class FirebaseConfig {
     constructor() {
@@ -10,64 +10,66 @@ class FirebaseConfig {
 
     async initialize() {
         try {
-            // Check if Firebase is already initialized
             if (admin.apps.length === 0) {
-                const serviceAccountPath = path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
+                const serviceAccount = {
+                    type: 'service_account',
+                    project_id: process.env.FIREBASE_PROJECT_ID,
+                    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+                    private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+                    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+                    client_id: process.env.FIREBASE_CLIENT_ID,
+                };
+
+                /*console.log('📦 Firebase ENV loaded:', {
+                    project_id: process.env.FIREBASE_PROJECT_ID,
+                    client_email: process.env.FIREBASE_CLIENT_EMAIL,
+                    private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+                    private_key_status: process.env.FIREBASE_PRIVATE_KEY ? 'Loaded' : 'Missing',
+                    FIREBASE_DATABASE_URL: process.env.FIREBASE_DATABASE_URL,
+                    FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET
+                });*/
 
                 admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccountPath),
+                    credential: admin.credential.cert(serviceAccount),
                     databaseURL: process.env.FIREBASE_DATABASE_URL,
-                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
                 });
 
-                console.log('Firebase Admin SDK initialized successfully');
+                console.log('✅ Firebase Admin SDK initialized');
             }
 
-            // Initialize services
             this.db = admin.firestore();
             this.auth = admin.auth();
             this.messaging = admin.messaging();
 
-            // Firestore settings
-            this.db.settings({
-                timestampsInSnapshots: true,
-            });
+            this.db.settings({ ignoreUndefinedProperties: true });
 
             return true;
         } catch (error) {
-            console.error('Firebase initialization failed:', error);
+            console.error('❌ Firebase initialization failed:', error);
             throw error;
         }
     }
 
     getFirestore() {
-        if (!this.db) {
-            throw new Error('Firestore not initialized. Call initialize() first.');
-        }
+        if (!this.db) throw new Error('Firestore not initialized.');
         return this.db;
     }
 
     getAuth() {
-        if (!this.auth) {
-            throw new Error('Firebase Auth not initialized. Call initialize() first.');
-        }
+        if (!this.auth) throw new Error('Auth not initialized.');
         return this.auth;
     }
 
     getMessaging() {
-        if (!this.messaging) {
-            throw new Error('Firebase Messaging not initialized. Call initialize() first.');
-        }
+        if (!this.messaging) throw new Error('Messaging not initialized.');
         return this.messaging;
     }
 
-    // Helper method to handle Firestore timestamps
     timestampToDate(timestamp) {
-        if (!timestamp) return null;
-        return timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return timestamp?.toDate?.() || new Date(timestamp);
     }
 
-    // Helper method to create Firestore timestamp
     createTimestamp(date = new Date()) {
         return admin.firestore.Timestamp.fromDate(date);
     }

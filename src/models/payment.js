@@ -8,8 +8,7 @@ const paymentSchema = new mongoose.Schema({
         required: true
     },
     orderId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Order',
+        type: String, 
         required: true
     },
     amount: {
@@ -23,7 +22,7 @@ const paymentSchema = new mongoose.Schema({
     paymentMethod: {
         type: String,
         required: true,
-        enum: ['credit_card', 'debit_card', 'paypal', 'wallet']
+        enum: ['credit_card', 'debit_card', 'paypal', 'wallet', 'momo', 'vnpay']
     },
     paymentStatus: {
         type: String,
@@ -32,6 +31,12 @@ const paymentSchema = new mongoose.Schema({
         default: 'pending'
     },
     transactionId: {
+        type: String
+    },
+    paidAt: {
+        type: Date
+    },
+    errorMessage: {
         type: String
     },
     paymentDetails: {
@@ -47,57 +52,54 @@ const paymentSchema = new mongoose.Schema({
     }
 });
 
-// Update the timestamp before saving
+// Update timestamp trước khi save
 paymentSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();
 });
 
-// Create the Mongoose model (used for MongoDB)
+// Mongoose model
 const PaymentModel = mongoose.model('Payment', paymentSchema);
 
 /**
  * Payment Repository for database operations
- * Works with both MongoDB and Firestore
  */
 class PaymentRepository extends BaseRepository {
     constructor() {
         super('payments', PaymentModel);
     }
 
-    /**
-     * Find payments by user ID
-     * @param {string} userId - User ID
-     * @returns {Promise<Array>} Array of payments
-     */
+    // Tìm tất cả payment của user
     async findByUserId(userId) {
         return this.find({ userId }, { sort: { createdAt: -1 } });
     }
 
-    /**
-     * Find payments by order ID
-     * @param {string} orderId - Order ID
-     * @returns {Promise<Array>} Array of payments
-     */
+    // Tìm tất cả payment theo orderId
     async findByOrderId(orderId) {
         return this.find({ orderId });
     }
 
-    /**
-     * Update payment status
-     * @param {string} id - Payment ID
-     * @param {string} status - New payment status
-     * @returns {Promise<object>} Updated payment
-     */
+    // Tìm 1 payment theo orderId (thường dùng cho MoMo IPN/notify)
+    async findOneByOrderId(orderId) {
+        return this.findOne({ orderId });
+    }
+
+    // Update paymentStatus
     async updateStatus(id, status) {
-        return this.updateById(id, { paymentStatus: status });
+        return this.updateById(id, { paymentStatus: status, updatedAt: new Date() });
+    }
+
+    // Update nhiều trường (paymentStatus, transactionId, paidAt, errorMessage,...)
+    async updatePayment(id, updateFields) {
+        updateFields.updatedAt = new Date();
+        return this.updateById(id, updateFields);
     }
 }
 
-// Create a singleton instance
+// Singleton instance
 const paymentRepository = new PaymentRepository();
 
 module.exports = {
     PaymentModel,
     paymentRepository
-}; 
+};
