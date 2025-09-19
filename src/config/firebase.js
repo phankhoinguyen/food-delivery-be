@@ -30,7 +30,7 @@ class FirebaseConfig {
                 });*/
 
                 admin.initializeApp({
-                    credential: admin.credential.cert('./serviceAccountKey.json'),
+                    credential: admin.credential.cert('/etc/secrets//food-delivery-app-44c33-firebase-adminsdk-fbsvc-7e5bf20133.json'),
                     databaseURL: process.env.FIREBASE_DATABASE_URL,
                     storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
                 });
