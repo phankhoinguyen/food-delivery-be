@@ -1,7 +1,5 @@
-// src/middlewares/authMiddleware.js
-const { admin, db } = require("../config/firebase");
+const firebase = require("../config/firebase"); 
 
-// ✅ Middleware xác thực Firebase token
 const verifyFirebaseToken = async (req, res, next) => {
     try {
         const authHeader = req.header("Authorization");
@@ -15,12 +13,10 @@ const verifyFirebaseToken = async (req, res, next) => {
 
         const idToken = authHeader.replace("Bearer ", "").trim();
 
-        // 🔥 Debug: log token trước khi verify
-        //console.log("🔹 Verifying Firebase token:", idToken);
+        // 🔥 Dùng getter của class FirebaseConfig
+        const decodedToken = await firebase.getAuth().verifyIdToken(idToken);
 
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-
-        const userDoc = await db.collection("user").doc(decodedToken.uid).get();
+        const userDoc = await firebase.getFirestore().collection("user").doc(decodedToken.uid).get();
 
         if (!userDoc.exists) {
             return res.status(403).json({
@@ -47,7 +43,7 @@ const verifyFirebaseToken = async (req, res, next) => {
     }
 };
 
-// ✅ Middleware kiểm tra quyền Admin
+// Middleware kiểm tra admin
 const isAdmin = (req, res, next) => {
     if (req.user && req.user.role === "admin") {
         return next();
