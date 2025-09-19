@@ -1,5 +1,5 @@
 // src/middlewares/authMiddleware.js
-const { admin, db } = require("../config/admin-firebase");
+const { admin, db } = require("../config/firebase");
 
 // ✅ Middleware xác thực Firebase token
 const verifyFirebaseToken = async (req, res, next) => {
