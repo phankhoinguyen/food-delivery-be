@@ -17,7 +17,7 @@ const verifyFirebaseToken = async (req, res, next) => {
             throw new Error('Firebase not initialized');
         }
 
-        // ✅ Xác thực token bằng Firebase Admin
+
         const decodedToken = await firebaseConfig.getAuth().verifyIdToken(idToken);
 
         req.user = {

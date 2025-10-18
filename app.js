@@ -54,7 +54,7 @@ async function startServer() {
         app.use('/api/payment', require('./src/routes/momoPaymentRoutes'));
         app.use('/api/notifications', require('./src/routes/notificationRoutes'));
         app.use('/api/orders', require('./src/routes/orderRoutes'));
-        app.use('/admin/products', require('./src/routes/adminProductRoutes'));
+        app.use('/api/admin', require('./src/routes/adminProductRoutes'));
         // 404 handler
         app.use((req, res) => {
             res.status(404).json({
