@@ -99,9 +99,15 @@ exports.getAll = async () => {
     return snapshot.docs.map(doc => {
         const data = doc.data();
         return {
-            id: doc.id,
+            id: data.id,
             name: data.name,
             category: data.category,
+            geoID: data.geoID,
+            geolink: data.geolink,
+            kcal: data.kcal,
+            price: data.price,
+            rate: data.rate,
+            unit: data.unit,
             imageCard: data.imageCard,
             imageDetail: data.imageDetail
         };
