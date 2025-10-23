@@ -76,7 +76,14 @@ exports.update = async (id, data) => {
         throw new Error("Không có field nào để update");
     }
 
-    await docRef.update(fieldsToUpdate);
+    try {
+        await docRef.update(fieldsToUpdate);
+        const doc = await docRef.get();
+        return { id: doc.id, ...doc.data() };
+    } catch (error) {
+        throw error;
+    }
+
 
 };
 
