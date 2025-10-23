@@ -60,7 +60,6 @@ exports.create = async (data, fileCard, fileDetail) => {
 // Cập nhật sản phẩm
 exports.update = async (id, data) => {
     const docRef = productsRef.doc(id);
-
     const fieldsToUpdate = {};
     if (data.name !== undefined) fieldsToUpdate.name = String(data.name);
     if (data.category !== undefined) fieldsToUpdate.category = String(data.category);
@@ -77,10 +76,8 @@ exports.update = async (id, data) => {
         throw new Error("Không có field nào để update");
     }
 
-    await docRef.set(fieldsToUpdate, { merge: true });
+    await docRef.update(fieldsToUpdate);
 
-    const doc = await docRef.get();
-    return { id: doc.id, ...doc.data() };
 };
 
 
