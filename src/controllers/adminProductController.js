@@ -13,9 +13,11 @@ const createProduct = async (req, res) => {
 // Cập nhật sản phẩm
 const updateProduct = async (req, res) => {
     try {
-        const product = await adminProductService.updateProduct(req.params.id, req.body);
-        if (!product) return res.status(404).json({ message: "Product not found" });
-        res.json(product);
+        await adminProductService.updateProduct(req.params.id, req.body);
+        // if (!product) return res.status(404).json({ message: "Product not found" });
+        res.json({
+            message: 'Updated Successful'
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
