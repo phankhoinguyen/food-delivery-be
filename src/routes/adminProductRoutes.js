@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { verifyFirebaseToken, isAdmin } = require("../middlewares/admin-authMiddleware");
+const { verifyFirebaseToken, isAdmin, uploadFile } = require("../middlewares/admin-authMiddleware");
 const adminProductController = require("../controllers/adminProductController");
 
 // Tạo sản phẩm
-router.post("/create", verifyFirebaseToken, isAdmin, adminProductController.createProduct);
+router.post("/create", verifyFirebaseToken, isAdmin, uploadFile, adminProductController.createProduct);
 
 // Xem tất cả sản phẩm
 router.get("/", verifyFirebaseToken, isAdmin, adminProductController.getAllProducts);

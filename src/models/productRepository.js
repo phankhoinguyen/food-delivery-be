@@ -1,20 +1,16 @@
 const admin = require("firebase-admin");
 const { v4: uuidv4 } = require("uuid");
 
-// Initialize Firebase Admin nếu chưa init
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.applicationDefault(), // hoặc serviceAccountKey
-        storageBucket: "food-delivery-app-44c33.appspot.com",
-    });
-}
+
 
 const db = admin.firestore();
 const productsRef = db.collection("products");
 const bucket = admin.storage().bucket();
 
+
+
 // Hàm upload file lên Storage
-async function uploadFileToStorage(file, folder = "product") {
+async function uploadFileToStorage(file, folder) {
     if (!file) return "";
 
     const filename = `${folder}/${uuidv4()}_${file.originalname}`;
@@ -28,9 +24,11 @@ async function uploadFileToStorage(file, folder = "product") {
     return `https://storage.googleapis.com/${bucket.name}/${filename}`;
 }
 
+
+
 // Tạo sản phẩm
 exports.create = async (data, fileCard, fileDetail) => {
-    const docRef = productsRef.doc(); // ID tự sinh
+    const docRef = productsRef.doc();
 
     // Upload hình nếu có
     const imageCardUrl = await uploadFileToStorage(fileCard, "product");

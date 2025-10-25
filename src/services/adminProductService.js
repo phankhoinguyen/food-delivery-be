@@ -1,8 +1,8 @@
 const productRepository = require("../models/productRepository");
 
 // Tạo sản phẩm
-exports.createProduct = async (data) => {
-    return await productRepository.create(data);
+exports.createProduct = async (data, fileCard, fileDetail) => {
+    return await productRepository.create(data, fileCard, fileDetail);
 };
 
 // Cập nhật sản phẩm

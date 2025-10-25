@@ -1,4 +1,6 @@
-const firebase = require("../config/firebase"); 
+const { storage } = require("firebase-admin");
+const firebase = require("../config/firebase");
+const multer = require('multer');
 
 const verifyFirebaseToken = async (req, res, next) => {
     try {
@@ -13,7 +15,7 @@ const verifyFirebaseToken = async (req, res, next) => {
 
         const idToken = authHeader.replace("Bearer ", "").trim();
 
-        // 🔥 Dùng getter của class FirebaseConfig
+
         const decodedToken = await firebase.getAuth().verifyIdToken(idToken);
 
         const userDoc = await firebase.getFirestore().collection("user").doc(decodedToken.uid).get();
@@ -43,7 +45,7 @@ const verifyFirebaseToken = async (req, res, next) => {
     }
 };
 
-// Middleware kiểm tra admin
+
 const isAdmin = (req, res, next) => {
     if (req.user && req.user.role === "admin") {
         return next();
@@ -53,5 +55,10 @@ const isAdmin = (req, res, next) => {
         message: "Access denied. Admins only.",
     });
 };
+
+const uploadFile = multer().fields([
+    { name: "imageCard", maxCount: 1 },
+    { name: "imageDetail", maxCount: 1 }
+])
 
 module.exports = { verifyFirebaseToken, isAdmin };

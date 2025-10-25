@@ -1,9 +1,13 @@
 const adminProductService = require("../services/adminProductService");
+const multer = require('multer');
 
 // Tạo sản phẩm
 const createProduct = async (req, res) => {
     try {
-        const product = await adminProductService.createProduct(req.body);
+        const imageCard = req.files?.imageCard ? req.files.imageCard[0] : null;
+        const imageDetail = req.files?.imageDetail ? req.files.imageDetail[0] : null;
+
+        const product = await adminProductService.createProduct(req.body, imageCard, imageDetail);
         res.status(201).json(product);
     } catch (error) {
         res.status(500).json({ message: error.message });
