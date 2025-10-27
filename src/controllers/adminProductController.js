@@ -17,7 +17,9 @@ const createProduct = async (req, res) => {
 // Cập nhật sản phẩm
 const updateProduct = async (req, res) => {
     try {
-        await adminProductService.updateProduct(req.params.id, req.body);
+        const imageCard = req.files?.imageCard ? req.files.imageCard[0] : null;
+        const imageDetail = req.files?.imageDetail ? req.files.imageDetail[0] : null;
+        await adminProductService.updateProduct(req.params.id, req.body, imageCard, imageDetail);
         // if (!product) return res.status(404).json({ message: "Product not found" });
         res.json({
             message: 'Updated Successful'

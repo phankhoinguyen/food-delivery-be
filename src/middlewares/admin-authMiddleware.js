@@ -61,4 +61,4 @@ const uploadFile = multer().fields([
     { name: "imageDetail", maxCount: 1 }
 ])
 
-module.exports = { verifyFirebaseToken, isAdmin };
+module.exports = { verifyFirebaseToken, isAdmin, uploadFile };

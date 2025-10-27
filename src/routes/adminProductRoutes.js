@@ -10,7 +10,7 @@ router.post("/create", verifyFirebaseToken, isAdmin, uploadFile, adminProductCon
 router.get("/", verifyFirebaseToken, isAdmin, adminProductController.getAllProducts);
 
 // Cập nhật sản phẩm
-router.put("/:id", verifyFirebaseToken, isAdmin, adminProductController.updateProduct);
+router.put("/:id", verifyFirebaseToken, isAdmin, uploadFile, adminProductController.updateProduct);
 
 // Xóa sản phẩm
 router.delete("/:id", verifyFirebaseToken, isAdmin, adminProductController.deleteProduct);

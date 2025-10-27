@@ -6,8 +6,8 @@ exports.createProduct = async (data, fileCard, fileDetail) => {
 };
 
 // Cập nhật sản phẩm
-exports.updateProduct = async (id, data) => {
-    return await productRepository.update(id, data);
+exports.updateProduct = async (id, data, fileCard, fileDetail) => {
+    return await productRepository.update(id, data, fileCard, fileDetail);
 };
 
 // Xóa sản phẩm

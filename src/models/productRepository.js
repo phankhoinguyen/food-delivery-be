@@ -10,10 +10,15 @@ const bucket = admin.storage().bucket();
 
 
 // Hàm upload file lên Storage
-async function uploadFileToStorage(file, folder) {
+async function uploadFileToStorage(file, folder, data, isDetail) {
     if (!file) return "";
 
-    const filename = `${folder}/${uuidv4()}_${file.originalname}`;
+    if (!isDetail) {
+        isDetail = '';
+    } else {
+        isDetail = 'D';
+    };
+    const filename = `${folder}/${data.category}_${isDetail}`;
     const fileUpload = bucket.file(filename);
 
     await fileUpload.save(file.buffer, {
@@ -31,8 +36,8 @@ exports.create = async (data, fileCard, fileDetail) => {
     const docRef = productsRef.doc();
 
     // Upload hình nếu có
-    const imageCardUrl = await uploadFileToStorage(fileCard, "product");
-    const imageDetailUrl = await uploadFileToStorage(fileDetail, "product");
+    const imageCardUrl = await uploadFileToStorage(fileCard, "product", data);
+    const imageDetailUrl = await uploadFileToStorage(fileDetail, "product", data);
 
     // Tạo object product
     const newProduct = {
@@ -56,15 +61,21 @@ exports.create = async (data, fileCard, fileDetail) => {
     return { id: doc.id, ...doc.data() };
 };
 // Cập nhật sản phẩm
-exports.update = async (id, data) => {
+exports.update = async (id, data, fileCard, fileDetail) => {
     const docRef = productsRef.doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists) {
+        throw new Error('Không tìm thấy sản phẩm')
+    }
+    const imageCardUrl = await uploadFileToStorage(fileCard, "product", data);
+    const imageDetailUrl = await uploadFileToStorage(fileDetail, "product", data);
     const fieldsToUpdate = {};
     if (data.name !== undefined) fieldsToUpdate.name = String(data.name);
     if (data.category !== undefined) fieldsToUpdate.category = String(data.category);
     if (data.geoID !== undefined) fieldsToUpdate.geoID = String(data.geoID);
     if (data.geolink !== undefined) fieldsToUpdate.geolink = String(data.geolink);
-    if (data.imageCard !== undefined) fieldsToUpdate.imageCard = String(data.imageCard);
-    if (data.imageDetail !== undefined) fieldsToUpdate.imageDetail = String(data.imageDetail);
+    if (data.imageCard !== undefined) fieldsToUpdate.imageCard = imageCardUrl;
+    if (data.imageDetail !== undefined) fieldsToUpdate.imageDetail = imageDetailUrl;
     if (data.price !== undefined) fieldsToUpdate.price = Number(data.price);
     if (data.rate !== undefined) fieldsToUpdate.rate = Number(data.rate);
     if (data.kcal !== undefined) fieldsToUpdate.kcal = Number(data.kcal);
