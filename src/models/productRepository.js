@@ -16,9 +16,9 @@ async function uploadFileToStorage(file, folder, data, isDetail) {
     if (!isDetail) {
         isDetail = '';
     } else {
-        isDetail = 'D';
+        isDetail = '_D';
     };
-    const filename = `${folder}/${data.category}_${isDetail}`;
+    const filename = `${folder}/${data.category}_${data.name}${isDetail}`;
     const fileUpload = bucket.file(filename);
 
     await fileUpload.save(file.buffer, {
@@ -34,10 +34,10 @@ async function uploadFileToStorage(file, folder, data, isDetail) {
 // Tạo sản phẩm
 exports.create = async (data, fileCard, fileDetail) => {
     const docRef = productsRef.doc();
-
+    console.log(data);
     // Upload hình nếu có
     const imageCardUrl = await uploadFileToStorage(fileCard, "product", data);
-    const imageDetailUrl = await uploadFileToStorage(fileDetail, "product", data);
+    const imageDetailUrl = await uploadFileToStorage(fileDetail, "product", data, true);
 
     // Tạo object product
     const newProduct = {
@@ -53,7 +53,7 @@ exports.create = async (data, fileCard, fileDetail) => {
         kcal: Number(data.kcal || 0),
         unit: String(data.unit || ''),
     };
-
+    console.log(newProduct);
     // Lưu Firestore
     await docRef.set(newProduct);
 
@@ -62,28 +62,34 @@ exports.create = async (data, fileCard, fileDetail) => {
 };
 // Cập nhật sản phẩm
 exports.update = async (id, data, fileCard, fileDetail) => {
+    console.log(data);
     const docRef = productsRef.doc(id);
     const doc = await docRef.get();
     if (!doc.exists) {
         throw new Error('Không tìm thấy sản phẩm')
     }
-    const imageCardUrl = await uploadFileToStorage(fileCard, "product", data);
-    const imageDetailUrl = await uploadFileToStorage(fileDetail, "product", data);
     const fieldsToUpdate = {};
+
+    if (fileCard !== null) {
+        const imageCardUrl = await uploadFileToStorage(fileCard, "product", data);
+        fieldsToUpdate.imageCard = imageCardUrl;
+    };
+    if (fileDetail !== null) {
+        const imageDetailUrl = await uploadFileToStorage(fileDetail, "product", data, true);
+        fieldsToUpdate.imageDetail = imageDetailUrl;
+    }
     if (data.name !== undefined) fieldsToUpdate.name = String(data.name);
     if (data.category !== undefined) fieldsToUpdate.category = String(data.category);
     if (data.geoID !== undefined) fieldsToUpdate.geoID = String(data.geoID);
     if (data.geolink !== undefined) fieldsToUpdate.geolink = String(data.geolink);
-    if (fileCard !== undefined) fieldsToUpdate.imageCard = imageCardUrl;
-    if (fileCard !== undefined) fieldsToUpdate.imageDetail = imageDetailUrl;
     if (data.price !== undefined) fieldsToUpdate.price = Number(data.price);
     if (data.rate !== undefined) fieldsToUpdate.rate = Number(data.rate);
     if (data.kcal !== undefined) fieldsToUpdate.kcal = Number(data.kcal);
     if (data.unit !== undefined) fieldsToUpdate.unit = String(data.unit);
-
     if (Object.keys(fieldsToUpdate).length === 0) {
         throw new Error("Không có field nào để update");
     }
+    console.log(fieldsToUpdate);
 
     try {
         await docRef.update(fieldsToUpdate);
