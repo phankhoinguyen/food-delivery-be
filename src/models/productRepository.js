@@ -74,8 +74,8 @@ exports.update = async (id, data, fileCard, fileDetail) => {
     if (data.category !== undefined) fieldsToUpdate.category = String(data.category);
     if (data.geoID !== undefined) fieldsToUpdate.geoID = String(data.geoID);
     if (data.geolink !== undefined) fieldsToUpdate.geolink = String(data.geolink);
-    if (data.imageCard !== undefined) fieldsToUpdate.imageCard = imageCardUrl;
-    if (data.imageDetail !== undefined) fieldsToUpdate.imageDetail = imageDetailUrl;
+    if (fileCard !== undefined) fieldsToUpdate.imageCard = imageCardUrl;
+    if (fileCard !== undefined) fieldsToUpdate.imageDetail = imageDetailUrl;
     if (data.price !== undefined) fieldsToUpdate.price = Number(data.price);
     if (data.rate !== undefined) fieldsToUpdate.rate = Number(data.rate);
     if (data.kcal !== undefined) fieldsToUpdate.kcal = Number(data.kcal);
