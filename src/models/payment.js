@@ -70,8 +70,8 @@ class PaymentRepository extends BaseRepository {
     }
 
     // Tìm tất cả payment của user
-    async findByUserId(userId) {
-        return this.find({ userId }, { sort: { createdAt: -1 } });
+    async findByFields(fields) {
+        return this.find(fields, { sort: { createdAt: -1 } });
     }
 
     // Tìm tất cả payment theo orderId

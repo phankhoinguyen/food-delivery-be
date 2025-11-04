@@ -146,6 +146,22 @@ class PaymentService {
             console.log(error);
         }
     }
+
+    async getPaymentByFields(fields) {
+        try {
+            const payments = await paymentRepository.findByFields(fields)
+
+            return {
+                success: true,
+                data: payments
+            }
+        } catch (error) {
+            return {
+                success: false,
+                message: error
+            }
+        }
+    }
 }
 
 module.exports = new PaymentService();
