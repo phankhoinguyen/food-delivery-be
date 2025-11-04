@@ -9,15 +9,10 @@ const paymentController = require('../controllers/paymentController');
 router.post('/momo', authMiddleware, momoPaymentController.create);
 
 // Callback URL được MoMo redirect người dùng về sau khi thanh toán
-router.get('/callback', paymentController.handleMomoCallback);
+router.get('/status/:orderId', authMiddleware, paymentController.checkStatusPayment);
 
 // IPN (Instant Payment Notification) – MoMo gọi POST về để xác nhận giao dịch
 router.post('/ipn', paymentController.handleMomoIPN);
 
-// Tạo dữ liệu deeplink để mở app MoMo (dành cho mobile app)
-router.post('/generate', authMiddleware, paymentController.generateMomoAppPaymentData);
-
-//Callback dùng để nhận dữ liệu MoMo gửi về nếu bạn khai báo notifyUrl
-router.post('/momo/callback', paymentController.handleMomoNotifyUrl);
 
 module.exports = router;
