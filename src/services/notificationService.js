@@ -185,6 +185,69 @@ class NotificationService {
                 error: error.message || 'Failed to send to users'
             };
         }
+
+
+    }
+
+
+    async sendToAdminTopic(notificationData) {
+        try {
+            const { title, body, data = {}, type = 'admin' } = notificationData;
+
+            if (!title || !body) {
+                throw new Error('Missing required notification information (title and body)');
+            }
+
+            // Ensure Firebase Admin SDK is initialized
+            if (!this.messaging) {
+                throw new Error('Firebase Admin SDK not initialized');
+            }
+
+            // Prepare the message for admin topic
+            const message = {
+                notification: {
+                    title,
+                    body
+                },
+                data: {
+                    ...data,
+                    type,
+                    notificationId: Date.now().toString(),
+                    click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                    timestamp: new Date().toISOString()
+                },
+                topic: 'admin' // Send to admin topic
+            };
+
+            // Send the message to admin topic
+            const response = await this.messaging.send(message);
+
+            console.log('Successfully sent notification to admin topic:', response);
+
+            // Save notification to database with admin flag
+            const savedNotification = await notificationRepository.create({
+                userId: 'admin', // Special userId for admin notifications
+                title,
+                body,
+                data,
+                type,
+                sentToDevice: true,
+                topic: 'admin'
+            });
+
+            return {
+                success: true,
+                message: 'Notification sent to admin topic successfully',
+                notificationId: savedNotification.id || savedNotification._id,
+                messageId: response
+            };
+        } catch (error) {
+            console.error('Admin topic notification error:', error);
+            return {
+                success: false,
+                error: error.message || 'Failed to send notification to admin topic'
+            };
+        }
     }
 }
 

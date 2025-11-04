@@ -1,24 +1,11 @@
 const paymentService = require('../services/paymentService');
-const notificationService = require('../services/notificationService');
 
-// Controller to create a new payment
-const processMomoPayment = async (req, res) => {
-    try {
-        const paymentData = req.body;
-        console.log('[PROCESS MOMO PAYMENT] Dữ liệu đầu vào:', paymentData);
-        const newPayment = await paymentService.processMomoPayment(paymentData);
-        res.status(201).json(newPayment);
-    } catch (error) {
-        console.error('[PROCESS MOMO PAYMENT ERROR]', error);
-        res.status(500).json({ error: error.message });
-    }
-};
 
 // Controller to get a payment by ID
-const getPaymentById = async (req, res) => {
+const checkStatusPayment = async (req, res) => {
     try {
-        const paymentId = req.params.id;
-        const payment = await paymentService.getPaymentById(paymentId);
+        const orderId = req.params.orderId;
+        const payment = await paymentService.checkStatusPayment(orderId);
         if (!payment) {
             return res.status(404).json({ message: 'Payment not found' });
         }
@@ -28,18 +15,7 @@ const getPaymentById = async (req, res) => {
     }
 };
 
-// Controller to handle Momo redirect callback
-const handleMomoCallback = async (req, res) => {
-    try {
-        const paymentResult = req.query;
-        console.log('[MOMO] Redirect Callback Data:', paymentResult);
-        await paymentService.processMomoCallback(paymentResult);
-        res.status(200).send('Payment processed successfully');
-    } catch (error) {
-        console.error('[MOMO CALLBACK ERROR]', error);
-        res.status(500).send('Internal Server Error');
-    }
-};
+
 
 // Controller to handle Momo IPN (Instant Payment Notification)
 const handleMomoIPN = async (req, res) => {
@@ -58,47 +34,33 @@ const handleMomoIPN = async (req, res) => {
     }
 };
 
-// Controller to generate data for MoMo App payment (QR or deep link)
-const generateMomoAppPaymentData = async (req, res) => {
-    try {
-        const paymentInfo = req.body;
-        const momoData = await paymentService.generateMomoAppPaymentData(paymentInfo);
-        res.status(200).json(momoData);
-    } catch (error) {
-        console.error('[GENERATE MOMO DATA ERROR]', error);
-        res.status(500).json({ error: error.message });
-    }
-};
 
-// ✅ Controller để xử lý notifyUrl MoMo gửi về
-const handleMomoNotifyUrl = async (req, res) => {
-    try {
-        const notifyData = req.body;
-        console.log('[MOMO] Notify URL Data Received:', notifyData);
 
-        const result = await paymentService.processMomoNotify(notifyData);
+// const handleMomoNotifyUrl = async (req, res) => {
+//     try {
+//         const notifyData = req.body;
+//         console.log('[MOMO] Notify URL Data Received:', notifyData);
 
-        if (result.success) {
-            // Gửi thông báo đẩy nếu cần
-            await notificationService.sendPaymentNotification(result.userId, result.message);
-            res.status(200).json({ message: 'Notify handled successfully' });
-        } else {
-            res.status(400).json({ message: result.message });
-        }
-    } catch (error) {
-        console.error('[MOMO NOTIFY ERROR]', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-};
+//         const result = await paymentService.processMomoNotify(notifyData);
 
-// ✅ Export tất cả các controller ra ngoài
+//         if (result.success) {
+//             // Gửi thông báo đẩy nếu cần
+//             await notificationService.sendPaymentNotification(result.userId, result.message);
+//             res.status(200).json({ message: 'Notify handled successfully' });
+//         } else {
+//             res.status(400).json({ message: result.message });
+//         }
+//     } catch (error) {
+//         console.error('[MOMO NOTIFY ERROR]', error);
+//         res.status(500).json({ error: 'Internal Server Error' });
+//     }
+// };
+
+
 const paymentController = {
-    processMomoPayment,
-    getPaymentById,
-    handleMomoCallback,
+    checkStatusPayment,
     handleMomoIPN,
-    generateMomoAppPaymentData,
-    handleMomoNotifyUrl // ✅ ĐÃ THÊM HÀM NÀY VÀO ĐÂY
+
 };
 
 module.exports = paymentController;

@@ -214,6 +214,52 @@ const notificationController = {
                 error: error.message
             });
         }
+    },
+
+    // Send notification to admin topic
+    sendToAdminTopic: async (req, res) => {
+        try {
+            const { title, body, data, type } = req.body;
+
+            // Validate required fields
+            if (!title || !body) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Title and body are required'
+                });
+            }
+
+            // Send notification to admin topic
+            const result = await notificationService.sendToAdminTopic({
+                title,
+                body,
+                data: data || {},
+                type: type || 'admin'
+            });
+
+            if (result.success) {
+                return res.status(200).json({
+                    success: true,
+                    message: result.message,
+                    data: {
+                        notificationId: result.notificationId,
+                        messageId: result.messageId
+                    }
+                });
+            } else {
+                return res.status(500).json({
+                    success: false,
+                    message: result.error || 'Failed to send notification to admin topic'
+                });
+            }
+        } catch (error) {
+            console.error('Send to admin topic error:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Internal server error',
+                error: error.message
+            });
+        }
     }
 };
 

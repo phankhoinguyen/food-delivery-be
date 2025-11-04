@@ -1,27 +1,28 @@
 const paymentService = require('../services/paymentService');
-
 const momoPaymentController = {
     create: async (req, res) => {
         try {
             const userId = req.user?.uid;
-            const { amount, paymentMethod, paymentDetails = {} } = req.body;
+            const { userToken, amount, paymentMethod, orderId, items = {} } = req.body;
 
-            if (!userId || !amount || !paymentMethod) {
-                return res.status(400).json({
+            if (!userId || !amount || !paymentMethod || !orderId || !items || !userToken) {
+                return res.status(402).json({
                     success: false,
                     message: 'Missing required payment information'
                 });
             }
 
-            paymentDetails.provider = 'momo';
+
 
             // Gọi service để tạo payment (Service sẽ tự lưu pending)
             const paymentResult = await paymentService.processMomoPayment({
                 userId,
                 amount,
                 paymentMethod,
-                paymentDetails
+                orderId,
+                items
             });
+            console.log(paymentResult.data);
 
             if (paymentResult.success) {
                 return res.status(200).json({
@@ -37,6 +38,7 @@ const momoPaymentController = {
                 });
             }
         } catch (error) {
+            console.log(error);
             return res.status(500).json({
                 success: false,
                 message: 'Internal server error',

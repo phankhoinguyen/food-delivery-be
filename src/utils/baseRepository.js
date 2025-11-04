@@ -170,6 +170,20 @@ class BaseRepository {
             throw error;
         }
     }
+    async deleteById(id) {
+        try {
+            if (this.dbType === 'mongodb') {
+                const result = await this.model.findByIdAndDelete(id);
+                return !!result;
+            } else {
+                await this.db.collection(this.collectionName).doc(id).delete();
+                return true;
+            }
+        } catch (error) {
+            console.error(`Error deleting document in ${this.collectionName}:`, error);
+            throw error;
+        }
+    }
 }
 
 module.exports = BaseRepository;

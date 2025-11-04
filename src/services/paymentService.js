@@ -3,6 +3,7 @@ const axios = require('axios');
 const paymentConfig = require('../config/paymentConfig');
 const notificationService = require('./notificationService');
 const { paymentRepository } = require('../models/payment');
+const { title } = require('process');
 
 // Hàm sanitize dữ liệu trước khi lưu Firestore
 function sanitizeData(obj) {
@@ -26,8 +27,7 @@ class PaymentService {
         this.defaultProvider = paymentConfig.defaultProvider;
     }
 
-    async processMomoPayment({ userId, amount, paymentMethod, paymentDetails }) {
-        const orderId = paymentDetails.orderId || crypto.randomUUID();
+    async processMomoPayment({ userId, userToken, amount, paymentMethod, orderId, items }) {
         const requestId = crypto.randomUUID();
         const { partnerCode, accessKey, secretKey, apiEndpoint, returnUrl, notifyUrl } = this.momoConfig;
 
@@ -55,7 +55,7 @@ class PaymentService {
         console.log('Request : ', requestBody)
         try {
             const momoRes = await axios.post(apiEndpoint, requestBody);
-
+            console.log(momoRes.data);
             if (momoRes.data.resultCode === 0) {
                 const pendingPaymentData = {
                     userId,
@@ -63,22 +63,23 @@ class PaymentService {
                     amount,
                     paymentMethod,
                     paymentStatus: 'pending',
-                    paymentDetails: {
-                        provider: 'momo',
-                        requestId,
-                        redirectUrl: momoRes.data.payUrl || null,
-                        deepLink: momoRes.data.deeplink || null,
-                        qrCodeUrl: momoRes.data.qrCodeUrl || null,
-                        smartUrl: momoRes.data.smartUrl || null
-                    }
+                    userToken,
+                    items
                 };
-
+                const paymentDetails = {
+                    provider: 'momo',
+                    requestId,
+                    redirectUrl: momoRes.data.payUrl || null,
+                    deepLink: momoRes.data.deeplink || null,
+                    qrCodeUrl: momoRes.data.qrCodeUrl || null,
+                    smartUrl: momoRes.data.smartUrl || null
+                }
                 // sanitize dữ liệu trước khi lưu
                 const sanitizedData = sanitizeData(pendingPaymentData);
                 console.log('Dữ liệu gửi Firestore:', sanitizedData);
 
-                await paymentRepository.create(sanitizedData); // lưu DB
-                return { success: true, data: sanitizedData.paymentDetails };
+                await paymentRepository.create(sanitizedData);
+                return { success: true, data: paymentDetails };
             } else {
                 return { success: false, error: momoRes.data };
             }
@@ -88,16 +89,62 @@ class PaymentService {
     }
 
     async processMomoNotify(notifyData) {
-        const { orderId, resultCode, transId, message, userId, amount } = notifyData;
+        const {
+            partnerCode,
+            orderId,
+            requestId,
+            amount,
+            orderInfo,
+            orderType,
+            transId,
+            resultCode,
+            message,
+            payType,
+            responseTime,
+            extraData,
+            signature } = notifyData;
 
         console.log('data :', notifyData);
+
+        const secretKey = process.env.MOMO_SECRET_KEY;
+
         const payment = await paymentRepository.findOneByOrderId(orderId);
+        const rawSignature = `accessKey=${process.env.MOMO_ACCESS_KEY}&amount=${amount}&extraData=${extraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&orderType=${orderType}&partnerCode=${partnerCode}&payType=${payType}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
+        const generatedSignature = crypto
+            .createHmac('sha256', secretKey)
+            .update(rawSignature)
+            .digest('hex');
 
-        // Only update status
-        const paymentId = payment.id || payment._id;
-        await paymentRepository.updateStatus(paymentId, parseInt(resultCode) === 0 ? 'completed' : 'failed');
+        if (signature === generatedSignature) {
+            // Only update status
+            const paymentId = payment.id || payment._id;
+            await paymentRepository.updateStatus(paymentId, parseInt(resultCode) === 0 ? 'completed' : 'failed');
+            // Push notification for admin
+            const notificationPayload = {
+                title: 'New Orders Now !!!',
+                body: `Order ${orderId} with a total of ${amount}`
+            }
+            notificationService.sendToAdminTopic(notificationPayload);
+            return { success: true, message: 'Notify processed' };
+        }
+        else {
+            return { success: false, message: 'Signature failed' };
+        }
+    }
 
-        return { success: true, message: 'Notify processed' };
+    async checkStatusPayment(orderId) {
+        try {
+            const payment = await paymentRepository.findOneByOrderId(orderId);
+            const data = {
+                orderId: payment.orderId,
+                amount: payment.amount,
+                paymentMethod: payment.paymentMethod,
+                paymentStatus: payment.paymentStatus
+            }
+            return data;
+        } catch (error) {
+            console.log(error);
+        }
     }
 }
 

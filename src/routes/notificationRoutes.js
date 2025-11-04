@@ -52,4 +52,11 @@ router.post('/device-token/unregister', authMiddleware, notificationController.u
  */
 router.post('/test', authMiddleware, notificationController.sendTestNotification);
 
+/**
+ * @route   POST /api/notifications/admin-topic
+ * @desc    Send notification to all admins via topic
+ * @access  Public (can be called by system/backend)
+ */
+router.post('/admin-topic', notificationController.sendToAdminTopic);
+
 module.exports = router; 
