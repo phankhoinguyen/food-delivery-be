@@ -33,7 +33,7 @@ class PaymentService {
         const { partnerCode, accessKey, secretKey, apiEndpoint, returnUrl, notifyUrl } = this.momoConfig;
 
         const orderInfo = 'Thanh toán đơn hàng qua MoMo';
-        const extraData = Buffer.from(JSON.stringtify({ userId })).toString('base64');
+        const extraData = Buffer.from(JSON.stringify({ userId })).toString('base64');
         const requestType = 'captureWallet';
 
         const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${notifyUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${returnUrl}&requestId=${requestId}&requestType=${requestType}`;
