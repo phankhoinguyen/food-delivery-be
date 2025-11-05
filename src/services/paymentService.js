@@ -3,7 +3,8 @@ const axios = require('axios');
 const paymentConfig = require('../config/paymentConfig');
 const notificationService = require('./notificationService');
 const { paymentRepository } = require('../models/payment');
-const { title } = require('process');
+const { cartRepository } = require('../models/cart');
+
 
 // Hàm sanitize dữ liệu trước khi lưu Firestore
 function sanitizeData(obj) {
@@ -88,7 +89,7 @@ class PaymentService {
         }
     }
 
-    async processMomoNotify(notifyData) {
+    async processMomoNotify(notifyData, userId) {
         const {
             partnerCode,
             orderId,
@@ -119,6 +120,8 @@ class PaymentService {
             // Only update status
             const paymentId = payment.id || payment._id;
             await paymentRepository.updateStatus(paymentId, parseInt(resultCode) === 0 ? 'completed' : 'failed');
+            // Delete cart 
+            await cartRepository.deleteById(userId);
             // Push notification for admin
             const notificationPayload = {
                 title: 'New Orders Now !!!',

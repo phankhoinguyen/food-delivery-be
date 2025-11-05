@@ -22,8 +22,9 @@ const checkStatusPayment = async (req, res) => {
 const handleMomoIPN = async (req, res) => {
     try {
         const ipnData = req.body;
+        const userId = req.user?.uid;
         console.log('[MOMO] IPN Data Received:', ipnData);
-        const result = await paymentService.processMomoNotify(ipnData);
+        const result = await paymentService.processMomoNotify(ipnData, userId);
         if (result.success) {
             res.status(200).json({ message: 'IPN processed successfully' });
         } else {
