@@ -177,6 +177,7 @@ class BaseRepository {
                 return !!result;
             } else {
                 await this.db.collection(this.collectionName).doc(id).delete();
+                console.log(`delete ${id} successfuly`)
                 return true;
             }
         } catch (error) {
