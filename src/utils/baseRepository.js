@@ -162,10 +162,10 @@ class BaseRepository {
                 const result = await this.model.findByIdAndDelete(id);
                 return !!result;
             } else {
-                await this.db.collection(this.collectionName).doc(id).delete();
                 const docRef = this.db.collection('cart').doc(id);
                 const docSnap = await docRef.get();
                 console.log('Before delete exists?', docSnap.exists);
+                await this.db.collection(this.collectionName).doc(id).delete();
                 console.log(`delete ${id} successfuly`)
                 return true;
             }
