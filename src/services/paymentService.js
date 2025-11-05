@@ -121,7 +121,7 @@ class PaymentService {
             const paymentId = payment.id || payment._id;
             await paymentRepository.updateStatus(paymentId, parseInt(resultCode) === 0 ? 'completed' : 'failed');
             // Delete cart 
-            await cartRepository.deleteById(userId);
+            await cartRepository.deleteByUserId(userId);
             // Push notification for admin
             const notificationPayload = {
                 title: 'New Orders Now !!!',
