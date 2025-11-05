@@ -116,14 +116,14 @@ class PaymentService {
             .update(rawSignature)
             .digest('hex');
 
-        const userId = JSON.parse(Buffer.from(extraData, 'base64').toString('utf8'));
+        const exData = JSON.parse(Buffer.from(extraData, 'base64').toString('utf8'));
 
         if (signature === generatedSignature) {
             // Only update status
             const paymentId = payment.id || payment._id;
             await paymentRepository.updateStatus(paymentId, parseInt(resultCode) === 0 ? 'completed' : 'failed');
             // Delete cart 
-            await cartRepository.deleteByUserId(userId);
+            await cartRepository.deleteByUserId(exData.userId);
             // Push notification for admin
             const notificationPayload = {
                 title: 'New Orders Now !!!',
