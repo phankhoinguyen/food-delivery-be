@@ -33,7 +33,7 @@ class PaymentService {
         const { partnerCode, accessKey, secretKey, apiEndpoint, returnUrl, notifyUrl } = this.momoConfig;
 
         const orderInfo = 'Thanh toán đơn hàng qua MoMo';
-        const extraData = '';
+        const extraData = Buffer.from(Json.stringtify({ userId })).toString('base64');
         const requestType = 'captureWallet';
 
         const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${notifyUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${returnUrl}&requestId=${requestId}&requestType=${requestType}`;
@@ -89,7 +89,7 @@ class PaymentService {
         }
     }
 
-    async processMomoNotify(notifyData, userId) {
+    async processMomoNotify(notifyData) {
         const {
             partnerCode,
             orderId,
@@ -115,6 +115,8 @@ class PaymentService {
             .createHmac('sha256', secretKey)
             .update(rawSignature)
             .digest('hex');
+
+        const userId = JSON.parse(Buffer.from(extraData, 'base64').toString('utf8'));
 
         if (signature === generatedSignature) {
             // Only update status
