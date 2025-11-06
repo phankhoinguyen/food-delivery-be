@@ -8,7 +8,7 @@ class CartRepository extends BaseRepository {
     }
 
     async deleteByUserId(userId) {
-        return this.deleteById(userId);
+        return this.deleteCartById(userId);
     }
 
 }

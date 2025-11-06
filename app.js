@@ -7,6 +7,7 @@ const { connectDB } = require('./src/config/db');
 // Load environment variables
 dotenv.config();
 const firebaseConfig = require('./src/config/firebase');
+const { TenantAwareAuth } = require('firebase-admin/auth');
 // Initialize Express app
 const app = express();
 
@@ -49,12 +50,30 @@ async function startServer() {
         await connectDB();
         console.log('Database connected successfully');
 
+        // Import cart repository after database connection
+        const { cartRepository } = require('./src/models/cart');
+
         // Load routes after database connection
         app.use('/api/auth', require('./src/routes/authRoutes'));
         app.use('/api/payment', require('./src/routes/momoPaymentRoutes'));
         app.use('/api/notifications', require('./src/routes/notificationRoutes'));
         app.use('/api/orders', require('./src/routes/orderRoutes'));
         app.use('/api/admin', require('./src/routes/adminProductRoutes'));
+        app.use('/api/cart/:id', async (req, res) => {
+            const userId = req.params.id;
+            try {
+                await cartRepository.deleteByUserId(userId);
+                res.status(200).json({
+                    success: true
+                })
+            } catch (error) {
+                res.status(401).json({
+                    success: false,
+                    message: error
+                })
+            }
+
+        });
         // 404 handler
         app.use((req, res) => {
             res.status(404).json({
