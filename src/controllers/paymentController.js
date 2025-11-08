@@ -39,7 +39,7 @@ const handleMomoIPN = async (req, res) => {
 const getPaymentByUserId = async (req, res) => {
     const userId = req.user?.uid;
     try {
-        const payload = await paymentService.getPaymentByFields({ userId });
+        const payload = await paymentService.getPaymentByFields({ userId, paymentStatus: 'completed' });
         if (payload.success) {
             res.status(200).json(payload);
         } else {

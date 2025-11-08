@@ -13,10 +13,9 @@ const momoPaymentController = {
             }
 
 
-
-            // Gọi service để tạo payment (Service sẽ tự lưu pending)
             const paymentResult = await paymentService.processMomoPayment({
                 userId,
+                userToken,
                 amount,
                 paymentMethod,
                 orderId,

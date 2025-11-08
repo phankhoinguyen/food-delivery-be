@@ -64,6 +64,7 @@ class PaymentService {
                     amount,
                     paymentMethod,
                     paymentStatus: 'pending',
+                    preparationStatus: 'pending',
                     userToken,
                     items
                 };

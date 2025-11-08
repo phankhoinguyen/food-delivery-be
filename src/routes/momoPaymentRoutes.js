@@ -13,7 +13,7 @@ router.get('/status/:orderId', authMiddleware, paymentController.checkStatusPaym
 
 router.get('/', authMiddleware, paymentController.getPaymentByUserId);
 
-router.get('/admin', authMiddleware, paymentController.getPaymentByStatus);
+router.get('/admin', paymentController.getPaymentByStatus);
 
 // IPN (Instant Payment Notification) – MoMo gọi POST về để xác nhận giao dịch
 router.post('/ipn', paymentController.handleMomoIPN);
