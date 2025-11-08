@@ -8,6 +8,9 @@ const { cartRepository } = require('../models/cart');
 
 // Hàm sanitize dữ liệu trước khi lưu Firestore
 function sanitizeData(obj) {
+    if (Array.isArray(obj)) {
+        return obj.map((item) => sanitizeData(item));
+    }
     const result = {};
     for (const key in obj) {
         const value = obj[key];
