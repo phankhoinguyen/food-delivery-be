@@ -1,9 +1,20 @@
-const mongoose = require('mongoose');
+const BaseRepository = require("../utils/baseRepository");
 
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, default: 'user' },
-});
 
-module.exports = mongoose.model('User', userSchema);
+
+class UserRepository extends BaseRepository {
+    constructor() {
+        super('user');
+    }
+
+    async findByUserId(userId) {
+        return this.findById(userId);
+    }
+
+}
+
+const userRepository = new UserRepository();
+
+module.exports = {
+    userRepository
+};

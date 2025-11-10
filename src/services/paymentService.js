@@ -4,6 +4,7 @@ const paymentConfig = require('../config/paymentConfig');
 const notificationService = require('./notificationService');
 const { paymentRepository } = require('../models/payment');
 const { cartRepository } = require('../models/cart');
+const { userRepository } = require('../models/user')
 
 
 // Hàm sanitize dữ liệu trước khi lưu Firestore
@@ -31,7 +32,7 @@ class PaymentService {
         this.defaultProvider = paymentConfig.defaultProvider;
     }
 
-    async processMomoPayment({ userId, userToken, amount, paymentMethod, orderId, items }) {
+    async processMomoPayment({ address, userId, userToken, amount, paymentMethod, orderId, items }) {
         const requestId = crypto.randomUUID();
         const { partnerCode, accessKey, secretKey, apiEndpoint, returnUrl, notifyUrl } = this.momoConfig;
 
@@ -60,15 +61,19 @@ class PaymentService {
         try {
             const momoRes = await axios.post(apiEndpoint, requestBody);
             console.log(momoRes.data);
+            const userData = await userRepository.findByUserId(userId);
+
             if (momoRes.data.resultCode === 0) {
                 const pendingPaymentData = {
                     userId,
                     orderId,
+                    address,
                     amount,
                     paymentMethod,
                     paymentStatus: 'pending',
                     preparationStatus: 'pending',
                     userToken,
+                    userName: userData?.name || 'Unknown',
                     items
                 };
                 const paymentDetails = {

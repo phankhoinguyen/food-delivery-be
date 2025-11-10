@@ -3,9 +3,9 @@ const momoPaymentController = {
     create: async (req, res) => {
         try {
             const userId = req.user?.uid;
-            const { userToken, amount, paymentMethod, orderId, items = {} } = req.body;
+            const { address, userToken, amount, paymentMethod, orderId, items = {} } = req.body;
 
-            if (!userId || !amount || !paymentMethod || !orderId || !items || !userToken) {
+            if (!userId || !amount || !paymentMethod || !orderId || !items || !userToken || address) {
                 return res.status(402).json({
                     success: false,
                     message: 'Missing required payment information'
@@ -14,6 +14,7 @@ const momoPaymentController = {
 
 
             const paymentResult = await paymentService.processMomoPayment({
+                address,
                 userId,
                 userToken,
                 amount,
