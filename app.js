@@ -59,21 +59,7 @@ async function startServer() {
         app.use('/api/notifications', require('./src/routes/notificationRoutes'));
         app.use('/api/orders', require('./src/routes/orderRoutes'));
         app.use('/api/admin', require('./src/routes/adminProductRoutes'));
-        app.use('/api/cart/:id', async (req, res) => {
-            const userId = req.params.id;
-            try {
-                await cartRepository.deleteByUserId(userId);
-                res.status(200).json({
-                    success: true
-                })
-            } catch (error) {
-                res.status(401).json({
-                    success: false,
-                    message: error
-                })
-            }
 
-        });
         // 404 handler
         app.use((req, res) => {
             res.status(404).json({
