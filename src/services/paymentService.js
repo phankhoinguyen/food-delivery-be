@@ -162,7 +162,8 @@ class PaymentService {
     }
     async updateOrderStatus(orderId, status) {
         try {
-            await paymentRepository.updatePayment(orderId, status);
+            const doc = await paymentRepository.findOneByOrderId(orderId);
+            await paymentRepository.updatePayment(doc.id, status);
             return {
                 success: true
             }
