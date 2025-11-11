@@ -160,6 +160,20 @@ class PaymentService {
             console.log(error);
         }
     }
+    async updateOrderStatus(orderId, status) {
+        try {
+            await paymentRepository.updatePayment(orderId, status);
+            return {
+                success: true
+            }
+        } catch (error) {
+            console.log(error);
+            return {
+                success: false,
+                message: error
+            }
+        }
+    }
 
     async getPaymentByFields(fields) {
         try {

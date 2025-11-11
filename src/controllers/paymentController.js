@@ -68,13 +68,29 @@ const getPaymentByStatus = async (req, res) => {
         })
     }
 }
+const updateOrderStatus = async (req, res) => {
+    const status = req.body;
+    try {
+        const payload = await paymentService.updateOrderStatus(req.params.orderId, status);
+        if (payload.success) {
+            res.status(200).json(payload);
+        } else {
+            res.status(400).json(payload);
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error
+        })
+    }
+}
 
 
 const paymentController = {
     checkStatusPayment,
     handleMomoIPN,
     getPaymentByUserId,
-    getPaymentByStatus
+    getPaymentByStatus,
+    updateOrderStatus
 };
 
 module.exports = paymentController;

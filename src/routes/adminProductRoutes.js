@@ -23,6 +23,7 @@ router.get("/name", verifyFirebaseToken, isAdmin, adminProductController.getProd
 router.get("/category", verifyFirebaseToken, isAdmin, adminProductController.getProductsByCategory);
 
 router.get('/orders', paymentController.getPaymentByStatus);
+router.put('/orders/:orderId', verifyFirebaseToken, isAdmin, paymentController.updateOrderStatus);
 
 // Tìm theo id
 router.get("/id", verifyFirebaseToken, isAdmin, adminProductController.getProductById);
