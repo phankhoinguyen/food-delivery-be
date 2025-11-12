@@ -164,7 +164,7 @@ class PaymentService {
         try {
             const { userToken, userId, preparationStatus } = body;
             const doc = await paymentRepository.findOneByOrderId(orderId);
-            await paymentRepository.updatePayment(doc.id, preparationStatus);
+            await paymentRepository.updatePayment(doc.id, { preparationStatus });
             const notificationPayload = {
                 title: 'Your order has been updated',
                 body: `Your order ${orderId} has been ${preparationStatus}.`,
