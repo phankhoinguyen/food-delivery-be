@@ -35,7 +35,7 @@ class NotificationService {
                     notificationId: Date.now().toString(),
                     click_action: 'FLUTTER_NOTIFICATION_CLICK'
                 },
-                tokens: deviceToken
+                token: deviceToken
             };
 
             // Send the message
