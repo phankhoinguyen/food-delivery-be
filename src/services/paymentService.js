@@ -162,7 +162,7 @@ class PaymentService {
     }
     async updateOrderStatus(orderId, body) {
         try {
-            const { userToken, userId, preparationStatus } = req.body;
+            const { userToken, userId, preparationStatus } = body;
             const doc = await paymentRepository.findOneByOrderId(orderId);
             await paymentRepository.updatePayment(doc.id, preparationStatus);
             const notificationPayload = {
