@@ -169,7 +169,7 @@ class PaymentService {
                 title: 'Your order has been updated',
                 body: `Your order ${orderId} has been ${preparationStatus}.`,
                 userId: userId,
-                deviceTokens: userToken
+                deviceToken: userToken
             }
             notificationService.sendPushNotification(notificationPayload);
             return {

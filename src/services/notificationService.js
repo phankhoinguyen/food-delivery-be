@@ -12,21 +12,10 @@ class NotificationService {
         this.messaging = admin.apps.length ? admin.messaging() : null;
     }
 
-    /**
-     * Send push notification to user devices
-     * 
-     * @param {Object} notification - Notification data
-     * @param {string} notification.userId - User ID
-     * @param {string} notification.title - Notification title
-     * @param {string} notification.body - Notification body
-     * @param {Object} notification.data - Additional data to send
-     * @param {string} notification.type - Notification type
-     * @param {Array<string>} notification.deviceTokens - Device tokens to send to
-     * @returns {Promise<Object>} Result of notification sending
-     */
+
     async sendPushNotification(notification) {
         try {
-            const { userId, title, body, data = {}, type = 'system', deviceTokens } = notification;
+            const { userId, title, body, data = {}, type = 'system', deviceToken } = notification;
 
             if (!userId || !title || !body) {
                 throw new Error('Missing required notification information');
@@ -46,7 +35,7 @@ class NotificationService {
                     notificationId: Date.now().toString(),
                     click_action: 'FLUTTER_NOTIFICATION_CLICK'
                 },
-                tokens: deviceTokens
+                tokens: deviceToken
             };
 
             // Send the message
@@ -60,7 +49,7 @@ class NotificationService {
                 data,
                 type,
                 sentToDevice: response.successCount > 0,
-                deviceTokens
+                deviceToken
             });
 
             // Return the result
