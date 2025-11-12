@@ -160,10 +160,17 @@ class PaymentService {
             console.log(error);
         }
     }
-    async updateOrderStatus(orderId, status) {
+    async updateOrderStatus(orderId, body) {
         try {
             const doc = await paymentRepository.findOneByOrderId(orderId);
-            await paymentRepository.updatePayment(doc.id, status);
+            await paymentRepository.updatePayment(doc.id, body.status);
+            const notificationPayload = {
+                title: 'Your order has been updated',
+                body: `Your order ${orderId} has been ${status}.`,
+                userId: body.userId,
+                deviceTokens: body.userToken
+            }
+            notificationService.sendPushNotification(notificationPayload);
             return {
                 success: true
             }
