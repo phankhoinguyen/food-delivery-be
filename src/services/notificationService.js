@@ -26,39 +26,15 @@ class NotificationService {
      */
     async sendPushNotification(notification) {
         try {
-            const { userId, title, body, data = {}, type = 'system', deviceTokens = [] } = notification;
+            const { userId, title, body, data = {}, type = 'system', deviceTokens } = notification;
 
             if (!userId || !title || !body) {
                 throw new Error('Missing required notification information');
             }
 
-            if (!deviceTokens.length) {
-                console.warn('No device tokens provided for push notification');
-
-                // Save notification to database even if no devices to send to
-                const savedNotification = await notificationRepository.create({
-                    userId,
-                    title,
-                    body,
-                    data,
-                    type,
-                    sentToDevice: false,
-                    deviceTokens: []
-                });
-
-                return {
-                    success: false,
-                    message: 'No device tokens provided',
-                    notificationId: savedNotification.id || savedNotification._id
-                };
-            }
-
-            // Ensure Firebase Admin SDK is initialized
             if (!this.messaging) {
                 throw new Error('Firebase Admin SDK not initialized');
             }
-
-            // Prepare the message
             const message = {
                 notification: {
                     title,
