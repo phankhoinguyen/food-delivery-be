@@ -74,7 +74,7 @@ class NotificationService {
             };
 
             // Send the message
-            const response = await this.messaging.sendMulticast(message);
+            const response = await this.messaging.send(message);
 
             // Save notification to database
             const savedNotification = await notificationRepository.create({
