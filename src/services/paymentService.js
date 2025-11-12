@@ -162,13 +162,14 @@ class PaymentService {
     }
     async updateOrderStatus(orderId, body) {
         try {
+            const { userToken, userId, preparationStatus } = req.body;
             const doc = await paymentRepository.findOneByOrderId(orderId);
-            await paymentRepository.updatePayment(doc.id, body.status);
+            await paymentRepository.updatePayment(doc.id, preparationStatus);
             const notificationPayload = {
                 title: 'Your order has been updated',
-                body: `Your order ${orderId} has been ${status}.`,
-                userId: body.userId,
-                deviceTokens: body.userToken
+                body: `Your order ${orderId} has been ${preparationStatus}.`,
+                userId: userId,
+                deviceTokens: userToken
             }
             notificationService.sendPushNotification(notificationPayload);
             return {
