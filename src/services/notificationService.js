@@ -46,10 +46,9 @@ class NotificationService {
                 userId,
                 title,
                 body,
+                isRead: false,
                 data,
                 type,
-                sentToDevice: response.successCount > 0,
-                deviceToken
             });
 
             // Return the result
@@ -189,14 +188,14 @@ class NotificationService {
 
             console.log('Successfully sent notification to admin topic:', response);
 
-            // Save notification to database with admin flag
+
             const savedNotification = await notificationRepository.create({
-                userId: 'admin', // Special userId for admin notifications
+                userId: 'admin',
                 title,
                 body,
+                isRead: false,
                 data,
                 type,
-                sentToDevice: true,
                 topic: 'admin'
             });
 
