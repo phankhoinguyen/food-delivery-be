@@ -6,7 +6,7 @@ const notificationController = {
     // Get all notifications for a user
     getUserNotifications: async (req, res) => {
         try {
-            const userId = req.params.userId || req.user.id;
+            const userId = req.params.userId || req.user?.uid;
             const limit = parseInt(req.query.limit) || 20;
             const page = parseInt(req.query.page) || 1;
 
@@ -37,7 +37,7 @@ const notificationController = {
     // Get unread notifications count for a user
     getUnreadCount: async (req, res) => {
         try {
-            const userId = req.params.userId || req.user.id;
+            const userId = req.params.userId || req.user?.uid;
 
             const unreadNotifications = await notificationRepository.findUnreadByUserId(userId);
 
@@ -96,7 +96,7 @@ const notificationController = {
     // Mark all notifications as read for a user
     markAllAsRead: async (req, res) => {
         try {
-            const userId = req.params.userId || req.user.id;
+            const userId = req.params.userId || req.user?.uid;
 
             await notificationRepository.markAllAsRead(userId);
 
