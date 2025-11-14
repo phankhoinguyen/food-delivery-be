@@ -117,7 +117,7 @@ class NotificationRepository extends BaseRepository {
 
                 unreadNotifications.forEach(notification => {
                     const docRef = this.db.collection(this.collectionName).doc(notification.id);
-                    batch.update(docRef, { isRead: true, updatedAt: new Date() });
+                    batch.update(docRef, { isRead: true });
                 });
 
                 await batch.commit();
