@@ -32,7 +32,7 @@ class PaymentService {
         this.defaultProvider = paymentConfig.defaultProvider;
     }
 
-    async processMomoPayment({ address, userId, userToken, amount, paymentMethod, orderId, items }) {
+    async processMomoPayment({ address, userId, amount, paymentMethod, orderId, items }) {
         const requestId = crypto.randomUUID();
         const { partnerCode, accessKey, secretKey, apiEndpoint, returnUrl, notifyUrl } = this.momoConfig;
 
@@ -72,7 +72,6 @@ class PaymentService {
                     paymentMethod,
                     paymentStatus: 'pending',
                     preparationStatus: 'pending',
-                    userToken,
                     userName: userData?.name || 'Unknown',
                     items
                 };
@@ -162,14 +161,15 @@ class PaymentService {
     }
     async updateOrderStatus(orderId, body) {
         try {
-            const { userToken, userId, preparationStatus } = body;
+            const { userId, preparationStatus } = body;
+            const userData = await userRepository.findByUserId(userId);
             const doc = await paymentRepository.findOneByOrderId(orderId);
             await paymentRepository.updatePayment(doc.id, { preparationStatus });
             const notificationPayload = {
                 title: 'Your order has been updated',
                 body: `Your order ${orderId} has been ${preparationStatus}.`,
                 userId: userId,
-                deviceToken: userToken
+                deviceTokens: userData.deviceTokens
             }
             notificationService.sendPushNotification(notificationPayload);
             return {

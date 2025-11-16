@@ -15,7 +15,7 @@ class NotificationService {
 
     async sendPushNotification(notification) {
         try {
-            const { userId, title, body, data = {}, type = 'system', deviceToken } = notification;
+            const { userId, title, body, data = {}, type = 'system', deviceTokens = [] } = notification;
 
             if (!userId || !title || !body) {
                 throw new Error('Missing required notification information');
@@ -24,22 +24,19 @@ class NotificationService {
             if (!this.messaging) {
                 throw new Error('Firebase Admin SDK not initialized');
             }
-            const message = {
-                notification: {
-                    title,
-                    body
-                },
+            const messages = deviceTokens.map(token => ({
+                notification: { title, body },
                 data: {
                     ...data,
                     type,
                     notificationId: Date.now().toString(),
-                    click_action: 'FLUTTER_NOTIFICATION_CLICK'
+                    click_action: 'FLUTTER_NOTIFICATION_CLICK',
                 },
-                token: deviceToken
-            };
+                token: token // mỗi message 1 token
+            }));
 
             // Send the message
-            const response = await this.messaging.send(message);
+            const response = await this.messaging.sendEachForMulticast(messages);
 
             // Save notification to database
             const savedNotification = await notificationRepository.create({
