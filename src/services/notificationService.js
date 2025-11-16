@@ -24,19 +24,19 @@ class NotificationService {
             if (!this.messaging) {
                 throw new Error('Firebase Admin SDK not initialized');
             }
-            const messages = deviceTokens.map(token => ({
+            const multicastMessage = {
                 notification: { title, body },
                 data: {
                     ...data,
                     type,
                     notificationId: Date.now().toString(),
-                    click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                    click_action: 'FLUTTER_NOTIFICATION_CLICK'
                 },
-                token: token // mỗi message 1 token
-            }));
+                tokens: deviceTokens
+            };
 
             // Send the message
-            const response = await this.messaging.sendEachForMulticast(messages);
+            const response = await this.messaging.sendEachForMulticast(multicastMessage);
 
             // Save notification to database
             const savedNotification = await notificationRepository.create({
